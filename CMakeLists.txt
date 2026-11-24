@@ -89,7 +89,7 @@ configure_file (
     "${CMAKE_SOURCE_DIR}/src/build_info.h")
 
 # a gcc-linkable library with just the fast solver
-add_library(tdoku_object OBJECT src/solver_dpll_triad_simd.cc src/util.cc)
+add_library(tdoku_object OBJECT src/solver_dpll_triad_simd.cc src/solver_dpll_triad_simd_experimental.cc src/solver_dpll_triad_simd_final.cc src/util.cc)
 target_compile_options(tdoku_object PUBLIC -fno-exceptions -fno-rtti -fpic)
 
 add_library(tdoku_static STATIC $<TARGET_OBJECTS:tdoku_object>)
@@ -109,10 +109,14 @@ set_target_properties(gurobi90 PROPERTIES
 
 set(BENCHMARK_SOLVER_SOURCES
         src/solver_dpll_triad_simd.cc
+        src/solver_dpll_triad_simd_experimental.cc
+        src/solver_dpll_triad_simd_final.cc
         other/other_solvers.cc)
 
 set(GENERATE_SOLVER_SOURCES
-        src/solver_dpll_triad_simd.cc)
+        src/solver_dpll_triad_simd.cc
+        src/solver_dpll_triad_simd_experimental.cc
+        src/solver_dpll_triad_simd_final.cc)
 
 if (GSS)
     add_definitions(-DGSS)
@@ -228,6 +232,12 @@ endif()
 add_executable(run_benchmark src/run_benchmark.cc src/util.cc ${BENCHMARK_SOLVER_SOURCES})
 add_executable(run_tests test/run_tests.cc src/util.cc ${BENCHMARK_SOLVER_SOURCES})
 add_executable(generate src/generate.cc src/util.cc ${GENERATE_SOLVER_SOURCES})
+
+# branching-heuristic research tools (see docs/BRANCHING_RESEARCH.md)
+add_executable(research_bench src/research_bench.cc src/solver_dpll_triad_simd.cc src/solver_dpll_triad_simd_experimental.cc src/solver_dpll_triad_simd_final.cc src/util.cc)
+add_executable(research_bench_stats src/research_bench.cc src/solver_dpll_triad_simd.cc src/solver_dpll_triad_simd_experimental.cc src/solver_dpll_triad_simd_final.cc src/util.cc)
+target_compile_definitions(research_bench_stats PRIVATE TDOKU_STATS)
+add_executable(ix_tests test/ix_tests.cc src/solver_dpll_triad_simd.cc src/solver_dpll_triad_simd_experimental.cc src/solver_dpll_triad_simd_final.cc src/util.cc)
 
 add_library(grid_lib STATIC src/grid_lib.cc)
 target_compile_options(grid_lib PUBLIC -fno-exceptions -fno-rtti -fpic)

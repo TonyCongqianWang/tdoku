@@ -24,6 +24,13 @@ size_t TdokuEnumerate(const char *puzzle,
                       void (*callback)(const char *, void *),
                       void *callback_arg);
 
+// As TdokuEnumerate but with a selectable branching heuristic (0 = original). Experimental.
+size_t TdokuEnumerateWithHeuristic(const char *puzzle,
+                                   size_t limit,
+                                   uint32_t heuristic,
+                                   void (*callback)(const char *, void *),
+                                   void *callback_arg);
+
 bool TdokuConstrain(bool pencilmark, char *puzzle);
 
 bool TdokuMinimize(bool pencilmark, bool monotonic, char *puzzle);
@@ -45,7 +52,9 @@ bool TdokuMinimize(bool pencilmark, bool monotonic, char *puzzle);
  * @param limit
  *       The maximum number of solutions to find before returning.
  * @param configuration
- *       Solver-specific configuration. Unused for tdoku.
+ *       Solver-specific configuration. Bits 0..7: if nonzero, return a solution even when
+ *       limit > 1. Bits 8..15: branching heuristic id (0 = the original tdoku heuristic; other
+ *       ids are experimental, see docs/BRANCHING_RESEARCH.md). Values < 256 behave as before.
  * @param solution
  *       Pointer to an 81 character array to receive the solution. Tdoku will only return
  *       a solution if it was given a limit of 1. Otherwise it's assumed we're just interested

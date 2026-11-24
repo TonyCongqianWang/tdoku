@@ -217,6 +217,9 @@ std::vector<Solver> GetAllSolvers() {
     solvers.emplace_back(Solver(OtherSolverRustSudoku,        0, "rust_sudoku",               "B/shr.../m.", 14));
 #endif
     solvers.emplace_back(Solver(TdokuSolverDpllTriadSimd,     0, "tdoku",                     "T/shrc+./m+", 15));
+    // experimental intersection-aware branching (heuristic id 5 in bits 8..15, see
+    // docs/BRANCHING_RESEARCH.md)
+    solvers.emplace_back(Solver(TdokuSolverDpllTriadSimd, 5u << 8u, "tdoku_ix",                  "T/shrc+./m+", 15));
     // @formatter:on
     return solvers;
 }

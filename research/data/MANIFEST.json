@@ -1,0 +1,202 @@
+{
+ "files": {
+  "dev/17clue.txt": {
+   "count": 5000,
+   "pool_size": 19527,
+   "sha256": "75008c2a4cf70865d5e45a496c13f319750ecc218ca6ebb570c10729f678da72",
+   "source": "data/puzzles2_17_clue",
+   "source_sha256": "2cf268735dfd40d32269b5f20ebbea067037e5976b4d016ce0b4d3c0a50deb30"
+  },
+  "dev/gen.txt": {
+   "count": 10000,
+   "pool_size": 199277,
+   "sha256": "e2ef21d231bf0c7f9a4e04f2a176c136ad672d1067f1b2c5b5dc3dcab762f5a5",
+   "source": "data/puzzles8_gen_puzzles",
+   "source_sha256": "89f44612f1ff5300906b4f79927e60b9b01db33e903dda0bdd944844211f8886"
+  },
+  "dev/hard.txt": {
+   "count": 10000,
+   "pool_size": 834004,
+   "sha256": "03b358f26165b301e3900b8fa391e683b0bc9cfacfd880bb0237c4238c960088",
+   "source": "data/puzzles4_forum_hardest_1905",
+   "source_sha256": "feaf0a30a0719b940bea32e4194ad59ac0416b3c1672940984b97309c2a20aa5"
+  },
+  "dev/hard11.txt": {
+   "count": 3000,
+   "pool_size": 19494,
+   "sha256": "d1460b123d594db5a79ce6470944fc7960b10d7f2c2a1dd57317b0b655e2209a",
+   "source": "data/puzzles5_forum_hardest_1905_11+",
+   "source_sha256": "56236eaf6c7445ea244db3423ec44a102349dbedf6e457af0fcdd3d07cf39996"
+  },
+  "dev/hard1106.txt": {
+   "count": 157,
+   "pool_size": 157,
+   "sha256": "4d5f40f42cdf173c1ad3b210a88790ac014651cde5b6923b4cb6f08e8057c673",
+   "source": "data/puzzles6_forum_hardest_1106",
+   "source_sha256": "45d0afc5892d6797621d7c00f518df8f1483eceb921416984b8687e16128eb06"
+  },
+  "dev/kaggle.txt": {
+   "count": 2000,
+   "pool_size": 39791,
+   "sha256": "601a230caf0b9b20afe7e1837d07355ef369cf2fa5c78aafdfaac3e781406dfb",
+   "source": "data/puzzles0_kaggle",
+   "source_sha256": "64e360ba3da9fec645362a0530ae0f20a0c235bd0b48b7f14c3524ca94a562d5"
+  },
+  "dev/magictour.txt": {
+   "count": 571,
+   "pool_size": 571,
+   "sha256": "5ee15a74328462f7d6a0460aeda82fee1faba8c51e1aaab0a944541b35956bd0",
+   "source": "data/puzzles3_magictour_top1465",
+   "source_sha256": "ca0369f516dac7dfdd987d2c310ac33dcfc7478db5171bea5bca1f3878758bce"
+  },
+  "dev/serg.txt": {
+   "count": 2000,
+   "pool_size": 4040,
+   "sha256": "3778018f24c2f6e05e889572ffa66f4a9dc7f1d4c3e7898e589326d9c8131771",
+   "source": "data/puzzles7_serg_benchmark",
+   "source_sha256": "5468125857f02cb1e9b1fc6ba36ac88dc8d75afa47bc030c507cdfefbfe0eeaa"
+  },
+  "dev/unbiased.txt": {
+   "count": 10000,
+   "pool_size": 400436,
+   "sha256": "9eced0497838a000a29e5b301401fdf833dacdb75d5d2eb09034f06ebe722cf7",
+   "source": "data/puzzles1_unbiased",
+   "source_sha256": "07a35f8a9cb394315c0b85bc73fea52ce552f4181acdcd0d550aace171498f40"
+  },
+  "test/17clue.txt": {
+   "count": 10000,
+   "pool_size": 14687,
+   "sha256": "d4c01c1e5611d4dd09438ef1c2c264def1bcf67c6b9a96f48c877e997a43147b",
+   "source": "data/puzzles2_17_clue",
+   "source_sha256": "2cf268735dfd40d32269b5f20ebbea067037e5976b4d016ce0b4d3c0a50deb30"
+  },
+  "test/fresh.txt": {
+   "count": 17972,
+   "pool_size": 17972,
+   "sha256": "6908f55103208cc8854e71fc21a65f80b2117c964dd46f823fb957863baacabc",
+   "source": "research/generated/fresh.txt",
+   "source_sha256": "c3b9a18a95cefa0dc24e23b8f8a4f6683327e7207c88d02f1741fc134c24da1c"
+  },
+  "test/gen.txt": {
+   "count": 20000,
+   "pool_size": 149832,
+   "sha256": "96fb214fd3d16f3a5b92b0518b34a7d71273dd7feb015d17c5a9bbb4589007eb",
+   "source": "data/puzzles8_gen_puzzles",
+   "source_sha256": "89f44612f1ff5300906b4f79927e60b9b01db33e903dda0bdd944844211f8886"
+  },
+  "test/hard.txt": {
+   "count": 20000,
+   "pool_size": 625658,
+   "sha256": "7ac331122dd61ea02e1226a8f3b732e9a891b4af9fb422be8be61b637c339a3b",
+   "source": "data/puzzles4_forum_hardest_1905",
+   "source_sha256": "feaf0a30a0719b940bea32e4194ad59ac0416b3c1672940984b97309c2a20aa5"
+  },
+  "test/hard11.txt": {
+   "count": 5000,
+   "pool_size": 14523,
+   "sha256": "2b392bcea376eb9e599a928a396bcac461c4a53be276c35664edb8ca45417597",
+   "source": "data/puzzles5_forum_hardest_1905_11+",
+   "source_sha256": "56236eaf6c7445ea244db3423ec44a102349dbedf6e457af0fcdd3d07cf39996"
+  },
+  "test/hard1106.txt": {
+   "count": 117,
+   "pool_size": 117,
+   "sha256": "9b50db916450351c2b7d5d3f42dedef63a86d0c68401b2a43120b3b287c7536e",
+   "source": "data/puzzles6_forum_hardest_1106",
+   "source_sha256": "45d0afc5892d6797621d7c00f518df8f1483eceb921416984b8687e16128eb06"
+  },
+  "test/kaggle.txt": {
+   "count": 10000,
+   "pool_size": 30150,
+   "sha256": "cddd34985e2e4e16ba239738469a9101b13a63a5880b9c4f9d03a910ce9c6bae",
+   "source": "data/puzzles0_kaggle",
+   "source_sha256": "64e360ba3da9fec645362a0530ae0f20a0c235bd0b48b7f14c3524ca94a562d5"
+  },
+  "test/magictour.txt": {
+   "count": 445,
+   "pool_size": 445,
+   "sha256": "fe897b4cf1b076bcd25996b8573c3988805bf862a4e37ce8a7048e658c26a305",
+   "source": "data/puzzles3_magictour_top1465",
+   "source_sha256": "ca0369f516dac7dfdd987d2c310ac33dcfc7478db5171bea5bca1f3878758bce"
+  },
+  "test/serg.txt": {
+   "count": 2909,
+   "pool_size": 2909,
+   "sha256": "4776b17e5f1663a2743bf891b3b2c6800fab38faa9087cd7d22753299d32cdb7",
+   "source": "data/puzzles7_serg_benchmark",
+   "source_sha256": "5468125857f02cb1e9b1fc6ba36ac88dc8d75afa47bc030c507cdfefbfe0eeaa"
+  },
+  "test/unbiased.txt": {
+   "count": 20000,
+   "pool_size": 299674,
+   "sha256": "a9b5288c40a3962e9298d33b108feb034d3f9dd8775a4e8fe3b453c85f06d0a8",
+   "source": "data/puzzles1_unbiased",
+   "source_sha256": "07a35f8a9cb394315c0b85bc73fea52ce552f4181acdcd0d550aace171498f40"
+  },
+  "val/17clue.txt": {
+   "count": 5000,
+   "pool_size": 14944,
+   "sha256": "2cbf7e9ceea4e281869f7f5d9652b889fdbf4da8636439d4e095389b63bf18f1",
+   "source": "data/puzzles2_17_clue",
+   "source_sha256": "2cf268735dfd40d32269b5f20ebbea067037e5976b4d016ce0b4d3c0a50deb30"
+  },
+  "val/gen.txt": {
+   "count": 10000,
+   "pool_size": 150719,
+   "sha256": "c90eec5e81fff595ea5c1c86281944c9c836969fe9c78f6981ca9f413b50343e",
+   "source": "data/puzzles8_gen_puzzles",
+   "source_sha256": "89f44612f1ff5300906b4f79927e60b9b01db33e903dda0bdd944844211f8886"
+  },
+  "val/hard.txt": {
+   "count": 10000,
+   "pool_size": 626787,
+   "sha256": "84fd0ffea7ef5356f384c4593edee45582eb6f100d898d4e7ae5f40958da9631",
+   "source": "data/puzzles4_forum_hardest_1905",
+   "source_sha256": "feaf0a30a0719b940bea32e4194ad59ac0416b3c1672940984b97309c2a20aa5"
+  },
+  "val/hard11.txt": {
+   "count": 3000,
+   "pool_size": 14745,
+   "sha256": "24009cddd3797c045bfdd97d1a1944fdf5885f7ad092c45c0fb247e32445d828",
+   "source": "data/puzzles5_forum_hardest_1905_11+",
+   "source_sha256": "56236eaf6c7445ea244db3423ec44a102349dbedf6e457af0fcdd3d07cf39996"
+  },
+  "val/hard1106.txt": {
+   "count": 101,
+   "pool_size": 101,
+   "sha256": "75d52899ac454368a4f984c9f18a6cb2aa91a253062840d5d1eafdca7d311c33",
+   "source": "data/puzzles6_forum_hardest_1106",
+   "source_sha256": "45d0afc5892d6797621d7c00f518df8f1483eceb921416984b8687e16128eb06"
+  },
+  "val/kaggle.txt": {
+   "count": 2000,
+   "pool_size": 30059,
+   "sha256": "414e5388722fd20516ce1e91939116db31f79eb56075fce9a5c66e332d4a427f",
+   "source": "data/puzzles0_kaggle",
+   "source_sha256": "64e360ba3da9fec645362a0530ae0f20a0c235bd0b48b7f14c3524ca94a562d5"
+  },
+  "val/magictour.txt": {
+   "count": 447,
+   "pool_size": 447,
+   "sha256": "400a902564480f1d4eae5e8fc2cfd8c3e062752c5a784ee293c4ef658bba6787",
+   "source": "data/puzzles3_magictour_top1465",
+   "source_sha256": "ca0369f516dac7dfdd987d2c310ac33dcfc7478db5171bea5bca1f3878758bce"
+  },
+  "val/serg.txt": {
+   "count": 2000,
+   "pool_size": 3022,
+   "sha256": "84f49a8503773d5feb3aeb3ef9f74fb38e7f9312502f1054b8d56efa91a7897d",
+   "source": "data/puzzles7_serg_benchmark",
+   "source_sha256": "5468125857f02cb1e9b1fc6ba36ac88dc8d75afa47bc030c507cdfefbfe0eeaa"
+  },
+  "val/unbiased.txt": {
+   "count": 10000,
+   "pool_size": 299890,
+   "sha256": "4d242bc17d203d2ceb7b36eb169c0a1f05bb056c0fb6124d9d489a7269d3cd4f",
+   "source": "data/puzzles1_unbiased",
+   "source_sha256": "07a35f8a9cb394315c0b85bc73fea52ce552f4181acdcd0d550aace171498f40"
+  }
+ },
+ "seed": 20261123,
+ "split_rule": "int(iso_hash,16) % 10 -> 0-3 dev, 4-6 val, 7-9 test"
+}

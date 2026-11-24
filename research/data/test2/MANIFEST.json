@@ -1,0 +1,37 @@
+{
+ "kaggle": {
+  "pool": 20150,
+  "count": 5000,
+  "sha256": "07076f03106806996e7f0d039c8e19e6e3797e2fda6f0eabee2ec6d1ea61f1b0"
+ },
+ "unbiased": {
+  "pool": 279674,
+  "count": 10000,
+  "sha256": "453d1c27bfc691a2ee5917814da7a51aa2b61f35a30c94d9f72d7fa17eb1bd91"
+ },
+ "17clue": {
+  "pool": 4681,
+  "count": 4000,
+  "sha256": "1acccb4024c4b0584873e6c19b515ccd92f661ff5b17adc2c602df9019161029"
+ },
+ "hard": {
+  "pool": 605658,
+  "count": 10000,
+  "sha256": "e8c1748404c6d7dd1140c9d92ef3b067e6189d91d5632d03ec265f43e42aa7ec"
+ },
+ "hard11": {
+  "pool": 9490,
+  "count": 3000,
+  "sha256": "f6823c09899959be7cffc270694501e7acf3b8e1c57a8781b9e2d304a5ccfc1a"
+ },
+ "gen": {
+  "pool": 129832,
+  "count": 10000,
+  "sha256": "bf2318ec855dd397343e26e7c58b00035b001ef108875f9239a6c844aca8a096"
+ },
+ "fresh2": {
+  "pool": 17963,
+  "count": 17963,
+  "sha256": "f0264727a78f9846794b38ceb8b610ea68c61dc3699c5147ded22db8d48c7b23"
+ }
+}
