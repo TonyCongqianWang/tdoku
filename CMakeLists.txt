@@ -89,7 +89,7 @@ configure_file (
     "${CMAKE_SOURCE_DIR}/src/build_info.h")
 
 # a gcc-linkable library with just the fast solver
-add_library(tdoku_object OBJECT src/solver_dpll_triad_simd.cc src/util.cc)
+add_library(tdoku_object OBJECT src/solver_dpll_triad_simd.cc src/solver_dpll_triad_simd_ix.cc src/util.cc)
 target_compile_options(tdoku_object PUBLIC -fno-exceptions -fno-rtti -fpic)
 
 add_library(tdoku_static STATIC $<TARGET_OBJECTS:tdoku_object>)
@@ -109,10 +109,12 @@ set_target_properties(gurobi90 PROPERTIES
 
 set(BENCHMARK_SOLVER_SOURCES
         src/solver_dpll_triad_simd.cc
+        src/solver_dpll_triad_simd_ix.cc
         other/other_solvers.cc)
 
 set(GENERATE_SOLVER_SOURCES
-        src/solver_dpll_triad_simd.cc)
+        src/solver_dpll_triad_simd.cc
+        src/solver_dpll_triad_simd_ix.cc)
 
 if (GSS)
     add_definitions(-DGSS)
