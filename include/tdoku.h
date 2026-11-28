@@ -49,7 +49,11 @@ bool TdokuMinimize(bool pencilmark, bool monotonic, char *puzzle);
  *       is the original heuristic; 1 (i.e. configuration 1 << 8) is the intersection-aware
  *       heuristic, which chooses band-digit splits by how strongly both branches restrict the
  *       intersecting bands (faster on hard puzzles; requires AVX2, otherwise the original is
- *       used). Bits 0..7: if nonzero, a solution is returned even when limit > 1.
+ *       used); 2 (configuration 2 << 8) is the branch-volume heuristic, which splits a
+ *       band-digit configuration set where the estimated search volume of both branches is
+ *       smallest (fewer guesses, faster on hard and pencilmark puzzles; requires AVX2, uses GFNI
+ *       when available, otherwise the original is used). Bits 0..7: if nonzero, a solution is
+ *       returned even when limit > 1.
  * @param solution
  *       Pointer to an 81 character array to receive the solution. Tdoku will only return
  *       a solution if it was given a limit of 1. Otherwise it's assumed we're just interested

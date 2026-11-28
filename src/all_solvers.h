@@ -218,6 +218,7 @@ std::vector<Solver> GetAllSolvers() {
 #endif
     solvers.emplace_back(Solver(TdokuSolverDpllTriadSimd,     0, "tdoku",                     "T/shrc+./m+", 15));
     solvers.emplace_back(Solver(TdokuSolverDpllTriadSimd, 1u << 8, "tdoku_ix",                  "T/shrc+./m+", 15));
+    solvers.emplace_back(Solver(TdokuSolverDpllTriadSimd, 2u << 8, "tdoku_lv",                  "T/shrc+./m+", 15));
     // @formatter:on
     return solvers;
 }

@@ -22,7 +22,7 @@
 // solution to solution) and not at depth >= 8. Otherwise the original heuristic decides.
 // Without AVX2 the original heuristic is used throughout.
 
-#define TDOKU_IX_TU
+#define TDOKU_HEURISTIC_TU
 #include "solver_dpll_triad_simd.cc"
 
 

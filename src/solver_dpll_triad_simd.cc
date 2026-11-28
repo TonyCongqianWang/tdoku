@@ -9,9 +9,12 @@
 
 using namespace std;
 
-// intersection-aware branching heuristic, compiled in solver_dpll_triad_simd_ix.cc
+// alternative branching heuristics, compiled in solver_dpll_triad_simd_ix.cc and _lv.cc (each
+// includes this file with TDOKU_HEURISTIC_TU defined)
 size_t TdokuSolverIntersection(const char *puzzle, size_t limit, bool return_last,
                                char *solution, size_t *num_guesses);
+size_t TdokuSolverVolume(const char *puzzle, size_t limit, bool return_last,
+                         char *solution, size_t *num_guesses);
 
 namespace {
 
@@ -793,28 +796,32 @@ struct GeneratorDpllTriadSimd {
 };
 
 
-#ifndef TDOKU_IX_TU
+#ifndef TDOKU_HEURISTIC_TU
 SolverDpllTriadSimd<0> solver_none{};
 SolverDpllTriadSimd<1> solver_last{};
 SolverDpllTriadSimd<2> solver_enum{};
 
 GeneratorDpllTriadSimd generator{};
-#endif  // TDOKU_IX_TU
+#endif  // TDOKU_HEURISTIC_TU
 
 } // namespace
 
-#ifndef TDOKU_IX_TU
+#ifndef TDOKU_HEURISTIC_TU
 
 // configuration: bits 0..7 nonzero => return a solution even if limit > 1 (as before);
 // bits 8..15 select the branching heuristic: 0 = original, 1 = intersection-aware (see
-// solver_dpll_triad_simd_ix.cc).
+// solver_dpll_triad_simd_ix.cc), 2 = branch volume (see solver_dpll_triad_simd_lv.cc).
 extern "C"
 size_t TdokuSolverDpllTriadSimd(const char *puzzle, size_t limit,
                                 uint32_t configuration,
                                 char *solution, size_t *num_guesses) {
     bool return_last = limit == 1 || (configuration & 0xffu) > 0;
-    if (((configuration >> 8u) & 0xffu) == 1u) {
+    uint32_t heuristic = (configuration >> 8u) & 0xffu;
+    if (heuristic == 1u) {
         return TdokuSolverIntersection(puzzle, limit, return_last, solution, num_guesses);
+    }
+    if (heuristic == 2u) {
+        return TdokuSolverVolume(puzzle, limit, return_last, solution, num_guesses);
     }
     if (return_last) {
         return solver_last.SolveSudoku(puzzle, limit, solution, num_guesses);
@@ -840,4 +847,4 @@ extern "C"
 bool TdokuMinimize(bool pencilmark, bool monotonic, char *puzzle) {
     return generator.Minimize(pencilmark, monotonic, puzzle);
 }
-#endif  // TDOKU_IX_TU
+#endif  // TDOKU_HEURISTIC_TU
