@@ -4,3 +4,8 @@ policy_eval
 final_gated
 # oracle CSVs (131 MB; regenerate with gather.sh)
 data/
+policy2
+policy_simd
+test_front
+policy_simd_fit
+mca/*.s

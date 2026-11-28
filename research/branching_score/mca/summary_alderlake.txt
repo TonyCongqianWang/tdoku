@@ -1,0 +1,5 @@
+k_mrv    instructions   101  labels   4  cycles(1 call)     74  RThroughput   17.5
+k_ix     instructions   661  labels  22  cycles(1 call)    232  RThroughput  126.5
+k_ds     instructions   771  labels  21  cycles(1 call)    241  RThroughput  142.2
+k_dv     instructions  1061  labels  37  cycles(1 call)    335  RThroughput  198.7
+k_lv     instructions  1749  labels  38  cycles(1 call)    523  RThroughput  355.2

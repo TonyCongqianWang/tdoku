@@ -1,0 +1,8 @@
+geomean(guesses+1) relative to exact MRV, test split (* = some puzzle capped at 300000)
+policy                                 hard   hard11 hard1106 magictou   17clue unbiased       pm  pm_easy    mean
+L0 exact MRV                         1.000    1.000    1.000    1.000    1.000    1.000    1.000*   1.000    1.000
+DS sum_c sum_j rho                   0.574    0.646    0.603    0.775    0.979    0.976    0.401*   0.663    0.677   train 0.676  {'mode': 2, 'wl': 0.0, 'ws': 1.0, 'g3': -0.25, 'g4': -0.5, 'gR': 0.02, 'sn': 0.5}
+DV log(eps + sum_c prod_j rho)       0.558    0.625    0.552    0.733    0.972    0.956    0.345*   0.581    0.634   train 0.635  {'mode': 2, 'g3': 0.0, 'g4': 0.0, 'gR': 0.02}
+DSV ws*sum + wlin*vol                0.555    0.624    0.562    0.733    0.972    0.954    0.364*   0.611    0.644   train 0.640  {'mode': 2, 'wl': 0.0, 'ws': 0.25, 'wlin': 4.0, 'g3': -0.25, 'g4': -0.5, 'gR': 0.05}
+DSLV ws*sum + wl*log vol             0.557    0.627    0.562    0.730    0.973    0.954    0.381*   0.598    0.646   train 0.640  {'mode': 2, 'wl': 2.0, 'ws': 0.1, 'g3': -0.25, 'g4': 0.0, 'gR': 0.05, 'eps': 0.001}
+(510s, 273 evaluations)

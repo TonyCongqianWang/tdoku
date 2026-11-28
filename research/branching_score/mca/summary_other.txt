@@ -1,0 +1,2 @@
+icelake-server k_mrv 67  icelake-server k_ix 231  icelake-server k_ds 238  icelake-server k_dv 332  icelake-server k_lv 490  
+znver4 k_mrv 55  znver4 k_ix 214  znver4 k_ds 238  znver4 k_dv 352  znver4 k_lv 497  

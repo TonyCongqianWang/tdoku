@@ -1,0 +1,6 @@
+SIMD dv, geomean(guesses+1) relative to exact MRV, test split (* = capped at 300000)
+policy                                 hard   hard11 hard1106 magictou   17clue unbiased       pm  pm_easy    mean
+L0 exact MRV                         1.000    1.000    1.000    1.000    1.000    1.000    1.000*   1.000    1.000
+DV start (double fit)                0.569    0.639    0.559    0.715    0.972    0.945    0.351*   0.542    0.632   train 0.633  {'al': 1.25, 'eps': 0.0001, 'g3': 0.0, 'g4': 0.25, 'gR': 0.02, 'cpick': 1}
+DV refit (SIMD)                      0.568    0.633    0.552    0.716    0.972    0.953    0.347*   0.507    0.624   train 0.625  {'al': 1.1, 'eps': 0.0001, 'g3': -0.25, 'g4': 0.0, 'gR': 0.02, 'cpick': 1}
+(10s, 44 evaluations)

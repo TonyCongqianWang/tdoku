@@ -1,0 +1,16 @@
+test split, geomean(guesses+1) relative to exact MRV
+policy                                 hard   hard11 hard1106 magictou   17clue unbiased       pm  pm_easy    mean
+L0 exact MRV                         1.000    1.000    1.000    1.000    1.000    1.000    1.000*   1.000    1.000
+ix ungated (L1)                      0.565    0.664    0.603    0.769    0.971    0.939    2.418*   3.570    1.040
+ix gated final (PR)                  0.584    0.680    0.629    0.780    0.971    0.939    1.207    1.591    0.874
+L5 (double)                          0.515    0.570    0.521    0.707    0.968    0.940    0.238*   0.436    0.564
+LV (double)                          0.517    0.571    0.511    0.697    0.969    0.939    0.262*   0.414    0.565
+
+val split, geomean(guesses+1) relative to exact MRV
+policy                                 hard   hard11 hard1106 magictou   17clue unbiased       pm  pm_easy    mean
+L0 exact MRV                         1.000    1.000    1.000    1.000    1.000    1.000    1.000*   1.000    1.000
+ix ungated (L1)                      0.578    0.656    0.607    0.770    0.966    0.951    2.196*   2.938    1.006
+ix gated final (PR)                  0.598    0.676    0.628    0.777    0.967    0.952    1.218    1.463    0.869
+L5 (double)                          0.537    0.588    0.560    0.751    0.966    0.942    0.337    0.402    0.598
+LV (double)                          0.532    0.586    0.544    0.740    0.962    0.947    0.337    0.407    0.595
+
