@@ -262,12 +262,386 @@ struct Tables {
 
 const Tables tables{};
 
+// Branching heuristic ("branch volume"). A decision splits the configurations C (n = |C| >= 2) of
+// a digit in a band into {c} | C \ {c}. It is chosen to minimize the estimated remaining search
+// volume of the two branches,
+//     s = ln(n^-be P+ + ((n-1)/n)^be P-) + g(n) + gR R,     P = prod_j (k_j / n_j)^al,
+// where, for each of the three crossing bands j, n_j is the number of configurations of the digit
+// in band j and k_j the number of those that stay locally compatible with the branch (they place
+// the digit in the shared box at a cell that the branch's rows / columns allow; for the - branch
+// the union of the rows of C \ {c}). R is the band's number of configurations and g(2) = 0.
+// Parameters were fitted on end-to-end guess counts: al 1.1, be 0.6, g(3) -0.25, g(>=4) -0.1,
+// gR 0.015 (natural log units).
+//
+// All 6 x 9 x 6 candidates are scored at once in 8-bit log arithmetic (1/24 bit): crossing counts
+// are table lookups of popcounts in a "digit per byte" layout, products are saturating sums and
+// sums of volumes a log-sum-exp with a 16-entry correction table. The six bands' digits are packed
+// into two AVX2 vectors. Ties go to the lowest band, digit and configuration. GFNI is used when
+// available (with an exact AVX2 fallback). Without AVX2 the original heuristic is used.
+#ifdef __AVX2__
+namespace branch_volume {
+
+// element (row of the box for horizontal bands, column for vertical) of configuration c in peer p
+constexpr int kElem[6][3] = {{0, 1, 2}, {1, 2, 0}, {2, 0, 1}, {2, 1, 0}, {0, 2, 1}, {1, 0, 2}};
+// the other configuration with the same element as c in peer p
+constexpr int kPartner[6][3] = {{4, 3, 5}, {5, 4, 3}, {3, 5, 4}, {2, 0, 1}, {0, 1, 2}, {1, 2, 0}};
+
+// 8-bit tables (unit 1/24 bit; see the derivation above):
+//   Q[k] = round(24 al log2(6 / k)), Q[0] = 255 ("volume 0"); used for k (with the + / - sets)
+//   and n (normalisation, Q[n] summed over the crossing bands)
+//   corr[i] = round(24 log2(1 + 2^-((8 i + 3.5) / 24)))   (log-sum-exp correction, D = 8 i..8 i+7)
+//   fp[n] = round(24 be log2 n), fm[n] = round(24 be log2(n / (n - 1)))
+//   g[n] = round(24 / ln 2 * (g(n) - min g)),  band term (R * 8) >> 4 = round(24 / ln 2 * gR * 16) / 16
+alignas(16) constexpr uint8_t kQ[16] = {255, 68, 42, 26, 15, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+alignas(16) constexpr uint8_t kQn[16] = {0, 68, 42, 26, 15, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+alignas(16) constexpr uint8_t kCorr[16] = {22, 19, 16, 13, 11, 9, 7, 6, 5, 4, 3, 2, 2, 2, 1, 1};
+alignas(16) constexpr uint8_t kFp[16] = {0, 0, 14, 23, 29, 33, 37, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+alignas(16) constexpr uint8_t kFm[16] = {0, 0, 14, 8, 6, 5, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+alignas(16) constexpr uint8_t kG[16] = {0, 0, 9, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+alignas(16) constexpr uint8_t kValid[16] = {0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+alignas(16) constexpr uint8_t kPopcount[16] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
+constexpr int kBandMul = 8;
+
+struct VolumeTables {
+    __m256i q, qn, corr, fp, fm, g, valid, popcount, lo4, ff, one;
+    __m256i cbit[6], ubit[3][3];  // set1(1 << c); configurations using element e of peer p
+    __m256i compat[3];            // pshufb: element set A -> configurations with element in peer x in A
+    __m256i perm_c02, perm_r1c1;  // vpermd: gather a box's columns 0 / 2, row 1 / column 1 per lane
+    __m256i pack_ctrl, rep9, band_mul;
+#ifdef __GFNI__
+    __m256i ident, hi2, lse_idx;
+    __m256i tr_cfg, tr_row02, tr_c02, tr_r1c1;  // byte shuffles before the 8x8 bit transposition
+#else
+    __m256i bitsel, x1f, x70;
+    __m256i ex_cfg[6], ex_row02[3], ex_c02[3], ex_r1c1[3];  // per element: broadcast its bytes
+#endif
+
+    static __m256i Bcast(const uint8_t *t) {
+        return _mm256_broadcastsi128_si256(_mm_load_si128((const __m128i *) t));
+    }
+#ifdef __GFNI__
+    // lane l: the low bytes of relative elements sel[l][k] to qword byte 7 - k, high bytes to 15 - k
+    static __m256i TransposeCtrl(const int sel[2][6], int count) {
+        alignas(32) int8_t b[32];
+        for (int k = 0; k < 32; k++) b[k] = (int8_t) 0x80;
+        for (int lane = 0; lane < 2; lane++)
+            for (int k = 0; k < count; k++) {
+                b[lane * 16 + 7 - k] = (int8_t) (2 * sel[lane][k]);
+                b[lane * 16 + 15 - k] = (int8_t) (2 * sel[lane][k] + 1);
+            }
+        return _mm256_load_si256((const __m256i *) b);
+    }
+#else
+    // lane l: element sel[l][k]'s low byte to bytes 0..7, high byte to 8..15
+    static void ExpandCtrls(const int sel[2][6], int count, __m256i *out) {
+        for (int k = 0; k < count; k++) {
+            alignas(32) int8_t b[32];
+            for (int lane = 0; lane < 2; lane++)
+                for (int i = 0; i < 16; i++) b[lane * 16 + i] = (int8_t) (2 * sel[lane][k] + (i >= 8));
+            out[k] = _mm256_load_si256((const __m256i *) b);
+        }
+    }
+#endif
+
+    VolumeTables() noexcept {
+        q = Bcast(kQ); qn = Bcast(kQn); corr = Bcast(kCorr); fp = Bcast(kFp); fm = Bcast(kFm);
+        g = Bcast(kG); valid = Bcast(kValid); popcount = Bcast(kPopcount);
+        lo4 = _mm256_set1_epi8(0x0f);
+        ff = _mm256_set1_epi8(-1);
+        one = _mm256_set1_epi8(1);
+        for (int c = 0; c < 6; c++) cbit[c] = _mm256_set1_epi8((char) (1 << c));
+        for (int p = 0; p < 3; p++) {
+            uint8_t using_elem[3] = {0, 0, 0};
+            for (int c = 0; c < 6; c++) using_elem[kElem[c][p]] |= (uint8_t) (1u << c);
+            for (int e = 0; e < 3; e++) ubit[p][e] = _mm256_set1_epi8((char) using_elem[e]);
+            alignas(16) uint8_t t[16] = {0};
+            for (int a = 0; a < 8; a++)
+                for (int e = 0; e < 3; e++) if ((a >> e) & 1) t[a] |= using_elem[e];
+            compat[p] = Bcast(t);
+        }
+        // cells are 16 16-bit elements (row r, column c at 4 r + c); dword k = elements 2k, 2k+1
+        perm_c02 = _mm256_setr_epi32(0, 2, 4, 7, 1, 3, 5, 7);   // lane 0: col 0 at 0,2,4; lane 1: col 2
+        perm_r1c1 = _mm256_setr_epi32(2, 3, 7, 7, 0, 2, 4, 7);  // lane 0: row 1 at 0,1,2; lane 1: col 1 at 1,3,5
+        alignas(16) int8_t pc[16];
+        for (int k = 0; k < 16; k++) pc[k] = (int8_t) 0x80;
+        pc[9] = 0;
+        pc[10] = 8;
+        pack_ctrl = Bcast((const uint8_t *) pc);
+        for (int k = 0; k < 16; k++) pc[k] = k <= 8 ? 0 : (int8_t) 0x80;
+        rep9 = Bcast((const uint8_t *) pc);
+        band_mul = _mm256_set1_epi16(kBandMul);
+        const int sel_cfg[2][6] = {{0, 1, 2, 3, 4, 5}, {0, 1, 2, 3, 4, 5}};
+        const int sel_row02[2][6] = {{0, 1, 2}, {0, 1, 2}};
+        const int sel_c02[2][6] = {{0, 2, 4}, {0, 2, 4}};
+        const int sel_r1c1[2][6] = {{0, 1, 2}, {1, 3, 5}};
+#ifdef __GFNI__
+        ident = _mm256_set1_epi64x((long long) 0x8040201008040201ull);
+        // gf2p8affine: result bit k = parity(A.byte[7 - k] & x)
+        hi2 = _mm256_set1_epi64x((long long) (((uint64_t) 0x10 << 56) | ((uint64_t) 0x20 << 48)));
+        lse_idx = _mm256_set1_epi64x((long long) (((uint64_t) 0x08 << 56) | ((uint64_t) 0x10 << 48) |
+                                                  ((uint64_t) 0x20 << 40) | ((uint64_t) 0x40 << 32) | 0x80));
+        tr_cfg = TransposeCtrl(sel_cfg, 6);
+        tr_row02 = TransposeCtrl(sel_row02, 3);
+        tr_c02 = TransposeCtrl(sel_c02, 3);
+        tr_r1c1 = TransposeCtrl(sel_r1c1, 3);
+#else
+        bitsel = _mm256_setr_epi8(1, 2, 4, 8, 16, 32, 64, -128, 1, 2, 4, 8, 16, 32, 64, -128,
+                                  1, 2, 4, 8, 16, 32, 64, -128, 1, 2, 4, 8, 16, 32, 64, -128);
+        x1f = _mm256_set1_epi8(0x1f);
+        x70 = _mm256_set1_epi8(0x70);
+        ExpandCtrls(sel_cfg, 6, ex_cfg);
+        ExpandCtrls(sel_row02, 3, ex_row02);
+        ExpandCtrls(sel_c02, 3, ex_c02);
+        ExpandCtrls(sel_r1c1, 3, ex_r1c1);
+#endif
+    }
+};
+
+const VolumeTables volume_tables{};
+
+inline __m256i Swap(const __m256i &x) { return _mm256_permute2x128_si256(x, x, 0x01); }
+
+// byte d (digit) of each lane: bit k set iff digit d is in the k-th selected element of the lane
+template <int count>
+inline __m256i Transpose(const __m256i &x, const __m256i &gf_ctrl, const __m256i *expand) {
+#ifdef __GFNI__
+    (void) expand;
+    return _mm256_gf2p8affine_epi64_epi8(volume_tables.ident, _mm256_shuffle_epi8(x, gf_ctrl), 0);
+#else
+    (void) gf_ctrl;
+    __m256i acc = _mm256_setzero_si256();
+    for (int k = 0; k < count; k++) {
+        __m256i sel = _mm256_and_si256(_mm256_shuffle_epi8(x, expand[k]), volume_tables.bitsel);
+        acc = _mm256_or_si256(acc, _mm256_and_si256(_mm256_cmpeq_epi8(sel, volume_tables.bitsel),
+                                                     _mm256_set1_epi8((char) (1 << k))));
+    }
+    return acc;
+#endif
+}
+
+// popcount of bytes holding at most 6 bits
+inline __m256i Pop6(const __m256i &x) {
+    const VolumeTables &t = volume_tables;
+    __m256i lo = _mm256_shuffle_epi8(t.popcount, _mm256_and_si256(x, t.lo4));
+#ifdef __GFNI__
+    __m256i hi = _mm256_shuffle_epi8(t.popcount, _mm256_gf2p8affine_epi64_epi8(x, t.hi2, 0));
+#else
+    __m256i hi = _mm256_shuffle_epi8(t.popcount, _mm256_srli_epi16(_mm256_andnot_si256(t.lo4, x), 4));
+#endif
+    return _mm256_add_epi8(lo, hi);
+}
+
+// log-sum-exp in "minus log" units: min(a, b) - corr(|a - b| >> 3), no correction for D >= 128
+inline __m256i Lse(const __m256i &a, const __m256i &b) {
+    const VolumeTables &t = volume_tables;
+    __m256i mn = _mm256_min_epu8(a, b), mx = _mm256_max_epu8(a, b), d = _mm256_sub_epi8(mx, mn);
+#ifdef __GFNI__
+    __m256i idx = _mm256_gf2p8affine_epi64_epi8(d, t.lse_idx, 0);
+#else
+    __m256i idx = _mm256_adds_epu8(_mm256_and_si256(_mm256_srli_epi16(d, 3), t.x1f), t.x70);
+#endif
+    return _mm256_subs_epu8(mn, _mm256_shuffle_epi8(t.corr, idx));
+}
+
+struct Packed {
+    __m256i a, b;
+};
+
+// band-pair vectors [h_x | v_x] use bytes 0..8 of each lane; three of them are packed into two:
+// a = [x0 digits 0..7 | x1 digits 0..7], b = [x2 digits 0..8 | x0 digit 8 | x1 digit 8 | 0..]
+inline Packed Pack(const __m256i &x0, const __m256i &x1, const __m256i &x2) {
+    return {_mm256_unpacklo_epi64(x0, x1),
+            _mm256_or_si256(x2, _mm256_shuffle_epi8(_mm256_unpackhi_epi64(x0, x1), volume_tables.pack_ctrl))};
+}
+
+// byte of (band b, digit d) in the packed layout
+inline void Where(int b, int d, int &half, int &k) {
+    int x = b % 3, lane = b < 3 ? 0 : 16;
+    if (x == 2) { half = 1; k = lane + d; return; }
+    if (d == 8) { half = 1; k = lane + 9 + x; return; }
+    half = 0;
+    k = lane + 8 * x + d;
+}
+
+inline int ByteOf(const __m256i &v, int k) {
+    alignas(32) uint8_t a[32];
+    _mm256_store_si256((__m256i *) a, v);
+    return a[k];
+}
+
+// one packed half: per byte the best branch LSE over the digit's configurations, and per
+// configuration its value (for the final choice of the configuration)
+inline __m256i Half(const __m256i E[3][3], const __m256i &cfg, const __m256i &n, __m256i lv[6]) {
+    const VolumeTables &t = volume_tables;
+    const __m256i zero = _mm256_setzero_si256();
+    __m256i member[6], nonmember[6];
+    for (int c = 0; c < 6; c++) {
+        nonmember[c] = _mm256_cmpeq_epi8(_mm256_and_si256(cfg, t.cbit[c]), zero);
+        member[c] = _mm256_xor_si256(nonmember[c], t.ff);
+    }
+    __m256i fp = _mm256_shuffle_epi8(t.fp, n), fm = _mm256_shuffle_epi8(t.fm, n);
+    // per peer: Q of the + sets (one element) and of the - sets (unions over the used elements:
+    // X_e = all used elements but e, T = all used elements)
+    __m256i qp[3][3], qx[3][3], qt[3];
+#pragma GCC unroll 3
+    for (int p = 0; p < 3; p++) {
+        __m256i m[3];
+#pragma GCC unroll 3
+        for (int e = 0; e < 3; e++) {
+            qp[p][e] = _mm256_shuffle_epi8(t.q, Pop6(E[p][e]));
+            if (p == 0) qp[p][e] = _mm256_adds_epu8(qp[p][e], fp);  // own-band fraction, folded in
+            m[e] = _mm256_andnot_si256(_mm256_cmpeq_epi8(_mm256_and_si256(cfg, t.ubit[p][e]), zero), E[p][e]);
+        }
+        __m256i x0 = _mm256_or_si256(m[1], m[2]), x1 = _mm256_or_si256(m[0], m[2]);
+        __m256i x2 = _mm256_or_si256(m[0], m[1]), tt = _mm256_or_si256(x0, m[0]);
+        qx[p][0] = _mm256_shuffle_epi8(t.q, Pop6(x0));
+        qx[p][1] = _mm256_shuffle_epi8(t.q, Pop6(x1));
+        qx[p][2] = _mm256_shuffle_epi8(t.q, Pop6(x2));
+        qt[p] = _mm256_shuffle_epi8(t.q, Pop6(tt));
+        if (p == 0) {
+            for (int e = 0; e < 3; e++) qx[p][e] = _mm256_adds_epu8(qx[p][e], fm);
+            qt[p] = _mm256_adds_epu8(qt[p], fm);
+        }
+    }
+    __m256i lmax = zero;
+#pragma GCC unroll 6
+    for (int c = 0; c < 6; c++) {
+        __m256i up = zero, um = zero;
+#pragma GCC unroll 3
+        for (int p = 0; p < 3; p++) {
+            int e = kElem[c][p];
+            // - branch: |T| if c's partner in peer p is in C (it keeps element e used), else |X_e|;
+            // Q(T) <= Q(X_e), so the choice is a min with Q(T) masked off when the partner is absent
+            __m256i qm = _mm256_min_epu8(qx[p][e], _mm256_or_si256(qt[p], nonmember[kPartner[c][p]]));
+            up = p == 0 ? qp[p][e] : _mm256_adds_epu8(up, qp[p][e]);
+            um = p == 0 ? qm : _mm256_adds_epu8(um, qm);
+        }
+        __m256i l = _mm256_and_si256(Lse(up, um), member[c]);
+        lv[c] = l;
+        lmax = _mm256_max_epu8(lmax, l);
+    }
+    return lmax;
+}
+
+// false if every band is fixed
+inline bool Choose(const State &state, int &out_b, int &out_d, int &out_c) {
+    const VolumeTables &t = volume_tables;
+    // configuration sets and sizes per digit, [h_x | v_x]
+    __m256i cfg[3], n[3];
+    for (int x = 0; x < 3; x++) {
+        __m256i r = _mm256_set_m128i(state.bands[1][x].configurations.vec, state.bands[0][x].configurations.vec);
+#ifdef __GFNI__
+        cfg[x] = Transpose<6>(r, t.tr_cfg, nullptr);
+#else
+        cfg[x] = Transpose<6>(r, r, t.ex_cfg);
+#endif
+        n[x] = Pop6(cfg[x]);
+    }
+    Packed cfgp = Pack(cfg[0], cfg[1], cfg[2]), np = Pack(n[0], n[1], n[2]);
+    __m256i valid_a = _mm256_shuffle_epi8(t.valid, np.a), valid_b = _mm256_shuffle_epi8(t.valid, np.b);
+    if (__builtin_expect(_mm256_testz_si256(_mm256_or_si256(valid_a, valid_b), t.ff), 0)) return false;
+
+    // per box: row sets of the columns [R0 | R2], [R1 | C1] and column sets [C0 | C2] (byte d = set of
+    // positions holding digit d); then the crossing-compatible sets E[x][p][e] of band pair x at peer
+    // p, element e: [configs of v_p compatible with row e of box (x, p) | of h_p with column e of (p, x)]
+    __m256i r02[9], c02[9], rc1[9];
+    for (int box = 0; box < 9; box++) {
+        const __m256i cells = state.boxen[box].cells.vec;
+        __m256i pc02 = _mm256_permutevar8x32_epi32(cells, t.perm_c02);
+        __m256i prc1 = _mm256_permutevar8x32_epi32(cells, t.perm_r1c1);
+#ifdef __GFNI__
+        r02[box] = Transpose<3>(cells, t.tr_row02, nullptr);
+        c02[box] = Transpose<3>(pc02, t.tr_c02, nullptr);
+        rc1[box] = Transpose<3>(prc1, t.tr_r1c1, nullptr);
+#else
+        r02[box] = Transpose<3>(cells, cells, t.ex_row02);
+        c02[box] = Transpose<3>(pc02, pc02, t.ex_c02);
+        rc1[box] = Transpose<3>(prc1, prc1, t.ex_r1c1);
+#endif
+    }
+    __m256i E[3][3][3];
+    for (int p = 0; p < 3; p++) {
+        __m256i mask = Swap(cfg[p]);  // [v_p | h_p]
+        for (int x = 0; x < 3; x++) {
+            const int hb = x * 3 + p, vb = p * 3 + x;
+            __m256i i0 = _mm256_permute2x128_si256(r02[hb], c02[vb], 0x20);
+            __m256i i2 = _mm256_permute2x128_si256(r02[hb], c02[vb], 0x31);
+            __m256i i1 = _mm256_blend_epi32(rc1[hb], rc1[vb], 0xf0);
+            E[x][p][0] = _mm256_and_si256(mask, _mm256_shuffle_epi8(t.compat[x], i0));
+            E[x][p][1] = _mm256_and_si256(mask, _mm256_shuffle_epi8(t.compat[x], i1));
+            E[x][p][2] = _mm256_and_si256(mask, _mm256_shuffle_epi8(t.compat[x], i2));
+        }
+    }
+    // band term (R * kBandMul) >> 4 per byte, R = sum of the band's n
+    __m256i rtx[3];
+    for (int x = 0; x < 3; x++) {
+        __m256i sad = _mm256_sad_epu8(n[x], _mm256_setzero_si256());
+        __m256i r = _mm256_add_epi64(sad, _mm256_bsrli_epi128(sad, 8));
+        rtx[x] = _mm256_shuffle_epi8(_mm256_srli_epi16(_mm256_mullo_epi16(r, t.band_mul), 4), t.rep9);
+    }
+    Packed rt = Pack(rtx[0], rtx[1], rtx[2]);
+    // crossing normalisation sum_j Q[n_j]: the same for all bands of an orientation
+    __m256i qn = _mm256_add_epi8(_mm256_add_epi8(_mm256_shuffle_epi8(t.qn, n[0]), _mm256_shuffle_epi8(t.qn, n[1])),
+                                 _mm256_shuffle_epi8(t.qn, n[2]));
+    __m256i nsw = Swap(qn);
+    Packed N = Pack(nsw, nsw, nsw);
+    __m256i EA[3][3], EB[3][3];
+    for (int p = 0; p < 3; p++)
+        for (int e = 0; e < 3; e++) {
+            Packed pe = Pack(E[0][p][e], E[1][p][e], E[2][p][e]);
+            EA[p][e] = pe.a;
+            EB[p][e] = pe.b;
+        }
+    __m256i lva[6], lvb[6];
+    __m256i la = Half(EA, cfgp.a, np.a, lva), lb = Half(EB, cfgp.b, np.b, lvb);
+
+    // key (maximised): max(1, avg(L, 255 - B)), B = normalisation + g(n) + band term
+    __m256i ba = _mm256_adds_epu8(_mm256_adds_epu8(N.a, _mm256_shuffle_epi8(t.g, np.a)), rt.a);
+    __m256i bb = _mm256_adds_epu8(_mm256_adds_epu8(N.b, _mm256_shuffle_epi8(t.g, np.b)), rt.b);
+    __m256i ya = _mm256_and_si256(_mm256_max_epu8(_mm256_avg_epu8(la, _mm256_xor_si256(ba, t.ff)), t.one), valid_a);
+    __m256i yb = _mm256_and_si256(_mm256_max_epu8(_mm256_avg_epu8(lb, _mm256_xor_si256(bb, t.ff)), t.one), valid_b);
+    __m256i m = _mm256_max_epu8(ya, yb);
+    m = _mm256_max_epu8(m, Swap(m));
+    m = _mm256_max_epu8(m, _mm256_bsrli_epi128(m, 8));
+    m = _mm256_max_epu8(m, _mm256_bsrli_epi128(m, 4));
+    m = _mm256_max_epu8(m, _mm256_bsrli_epi128(m, 2));
+    m = _mm256_max_epu8(m, _mm256_bsrli_epi128(m, 1));
+    __m256i target = _mm256_broadcastb_epi8(_mm256_castsi256_si128(m));
+    uint32_t ma = (uint32_t) _mm256_movemask_epi8(_mm256_cmpeq_epi8(ya, target));
+    uint32_t mb = (uint32_t) _mm256_movemask_epi8(_mm256_cmpeq_epi8(yb, target));
+    const uint32_t dm[6] = {(ma & 0xff) | ((mb >> 9 & 1) << 8), (ma >> 8 & 0xff) | ((mb >> 10 & 1) << 8),
+                            mb & 0x1ff, (ma >> 16 & 0xff) | ((mb >> 25 & 1) << 8),
+                            (ma >> 24 & 0xff) | ((mb >> 26 & 1) << 8), mb >> 16 & 0x1ff};
+    for (int b = 0; b < 6; b++) {
+        if (!dm[b]) continue;
+        int d = __builtin_ctz(dm[b]), half, k;
+        Where(b, d, half, k);
+        unsigned cs = (unsigned) ByteOf(half ? cfgp.b : cfgp.a, k);
+        int bv = ByteOf(half ? bb : ba, k), y = ByteOf(target, 0);
+        const __m256i *lv = half ? lvb : lva;
+        out_b = b;
+        out_d = d;
+        out_c = __builtin_ctz(cs);
+        for (int c = 0; c < 6; c++) {  // the lowest configuration reaching the key
+            if (!(cs >> c & 1)) continue;
+            int key = (ByteOf(lv[c], k) + (255 - bv) + 1) >> 1;
+            if ((key > 1 ? key : 1) == y) { out_c = c; break; }
+        }
+        return true;
+    }
+    return false;  // unreachable
+}
+
+}  // namespace branch_volume
+#endif  // __AVX2__
+
 template<int solution_mode>
 struct SolverDpllTriadSimd {
     State solution_{};
     size_t limit_ = 1;
     size_t num_solutions_ = 0;
     size_t num_guesses_ = 0;
+    bool original_heuristic_ = false;  // branch with ChooseBandAndValueToBranch instead
     void (*callback_)(const char *, void *) = nullptr;
     void *callback_arg_ = nullptr;
 
@@ -489,47 +863,42 @@ struct SolverDpllTriadSimd {
         }.MinPosGreaterThanOrEqual(10);
 
         // if we have an unfixed band then find a digit in the band with the fewest possibilities.
-        // the approach below is faster than actually counting the configuration for each digit and
-        // using MinPosGreaterThanOrEqual as above, but it is inexact in rare cases when all digits
-        // have 4 or more configurations. the tradeoff is a net positive for Vanilla Sudoku and a
-        // net negative for Pencilmark Sudoku.
+        // the configurations of each digit are counted in binary (up to 6) with carry-save adders,
+        // and a digit with exactly two, else exactly three, else four or more configurations is
+        // chosen. this is faster than counting exactly and taking the minimum position as above,
+        // but it is inexact in rare cases when all digits have 4 or more configurations. the
+        // tradeoff is a net positive for Vanilla Sudoku and a net negative for Pencilmark Sudoku.
         if ((config_minpos & 0xff00u) == 0) {
             best_band = config_minpos >> 16u;
             const auto &configurations =
                     state.bands[tables.div3[best_band]][tables.mod3[best_band]].configurations;
-            Cells08 one = configurations;
-            Cells08 shuffle_rotate = Cells08{shuf01, shuf02, shuf03, shuf04, shuf05, shuf00, 0xffff, 0xffff};
-            Cells08 rotated = one.Shuffle(shuffle_rotate); // 1
-            Cells08 two = one & rotated;
-            one |= rotated;
-            rotated = rotated.Shuffle(shuffle_rotate); // 2
-            Cells08 three = two & rotated;
-            two |= one & rotated;
-            one |= rotated;
-            rotated = rotated.Shuffle(shuffle_rotate); // 3
-            Cells08 four = three & rotated;
-            three |= two & rotated;
-            two |= one & rotated;
-            one |= rotated;
-            rotated = rotated.Shuffle(shuffle_rotate); // 4
-            four |= three & rotated;
-            three |= two & rotated;
-            two |= one & rotated;
-            one |= rotated;
-            rotated = rotated.Shuffle(shuffle_rotate); // 5
-            four |= three & rotated;
-            three |= two & rotated;
-            two |= one & rotated;
+            // a full adder over lanes {i, i+1, i+2}; rotating its outputs by three lanes gives the
+            // one over lanes {i+3, i+4, i+5}, so every lane 0..5 ends up with the full count
+            // 4 * b2 + 2 * b1 + b0 of each digit.
+            Cells08 rotate1 = Cells08{shuf01, shuf02, shuf03, shuf04, shuf05, shuf00, 0xffff, 0xffff};
+            Cells08 rotate3 = Cells08{shuf03, shuf04, shuf05, shuf00, shuf01, shuf02, 0xffff, 0xffff};
+            Cells08 r1 = configurations.Shuffle(rotate1);
+            Cells08 r2 = r1.Shuffle(rotate1);
+            Cells08 t = configurations ^ r1;
+            Cells08 s = t ^ r2;
+            Cells08 c = (configurations & r1) | (t & r2);
+            Cells08 s3 = s.Shuffle(rotate3);
+            Cells08 c3 = c.Shuffle(rotate3);
+            Cells08 b0 = s ^ s3;
+            Cells08 cc = s & s3;
+            Cells08 t2 = c ^ c3;
+            Cells08 b1 = t2 ^ cc;
+            Cells08 b2 = (c & c3) | (t2 & cc);
 
-            Cells08 only_two = two.and_not(three);
+            Cells08 only_two = b1.and_not(b0 | b2);
             if (!LIKELY(only_two.AllZero())) {
                 return {best_band, only_two.GetLowBit()};
             } else {
-                Cells08 only_three = three.and_not(four);
+                Cells08 only_three = (b1 & b0).and_not(b2);
                 if (LIKELY(!only_three.AllZero())) {
                     return {best_band, only_three.GetLowBit()};
                 } else {
-                    return {best_band, four.GetLowBit()};
+                    return {best_band, b2.GetLowBit()};
                 }
             }
         }
@@ -558,15 +927,56 @@ struct SolverDpllTriadSimd {
         }
     }
 
+    // branch on asserting vs. eliminating configuration `config` of `digit` in the band
+    template<int vertical>
+    void BranchOnConfig(int band_idx, int digit, int config, State &state) {
+        static const Cells08 config_lane[6]{
+                {0xffff, 0, 0, 0, 0, 0, 0, 0}, {0, 0xffff, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0xffff, 0, 0, 0, 0, 0}, {0, 0, 0, 0xffff, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0xffff, 0, 0, 0}, {0, 0, 0, 0, 0, 0xffff, 0, 0}};
+        Band &band = state.bands[vertical][band_idx];
+        Cells08 value_configurations = band.configurations & tables.one_value_mask[digit];
+        num_guesses_++;
+        State state_copy = state;
+        Cells08 assignment_elims = value_configurations.and_not(config_lane[config]);
+        state_copy.bands[vertical][band_idx].eliminations |= assignment_elims;
+        if (BandEliminate<vertical>(state_copy, band_idx)) {
+            CountSolutionsConsistentWithPartialAssignment(state_copy);
+            if (num_solutions_ == limit_) return;
+        }
+        Cells08 negation_elims = value_configurations & config_lane[config];
+        state.bands[vertical][band_idx].eliminations |= negation_elims;
+        if (BandEliminate<vertical>(state, band_idx)) {
+            CountSolutionsConsistentWithPartialAssignment(state);
+        }
+    }
+
+    void RecordSolution(State &state) {
+        num_solutions_++;
+        if (solution_mode == 1 && num_solutions_ == limit_) solution_ = state;
+        if (solution_mode == 2) ReportSolution(state);
+    }
+
     // do not call this twice on the same state. for efficiency this count may modify the
     // given state instead of making copies. if called with limit > 1 this can leave the state
     // changed in a way that makes subsequent calls return different results.
     void CountSolutionsConsistentWithPartialAssignment(State &state) {
+#ifdef __AVX2__
+        if (!original_heuristic_) {
+            int band, digit, config;
+            if (!branch_volume::Choose(state, band, digit, config)) {
+                RecordSolution(state);
+            } else if (band < 3) {
+                BranchOnConfig<0>(band, digit, config, state);
+            } else {
+                BranchOnConfig<1>(band - 3, digit, config, state);
+            }
+            return;
+        }
+#endif
         auto band_and_value = ChooseBandAndValueToBranch(state);
         if (band_and_value.first == NONE) {
-            num_solutions_++;
-            if (solution_mode == 1 && num_solutions_ == limit_) solution_ = state;
-            if (solution_mode == 2) ReportSolution(state);
+            RecordSolution(state);
         } else {
             if (band_and_value.first < 3) {
                 BranchOnBandAndValue<0>(
@@ -797,14 +1207,19 @@ GeneratorDpllTriadSimd generator{};
 
 } // namespace
 
+// configuration: bits 0..7 nonzero => return a solution even if limit > 1; bits 8..15 == 1 =>
+// branch with the original heuristic (ChooseBandAndValueToBranch) instead of the branch-volume one.
 extern "C"
 size_t TdokuSolverDpllTriadSimd(const char *puzzle, size_t limit,
                                 uint32_t configuration,
                                 char *solution, size_t *num_guesses) {
-    bool return_last = limit == 1 || configuration > 0;
+    bool return_last = limit == 1 || (configuration & 0xffu) > 0;
+    bool original_heuristic = ((configuration >> 8u) & 0xffu) == 1u;
     if (return_last) {
+        solver_last.original_heuristic_ = original_heuristic;
         return solver_last.SolveSudoku(puzzle, limit, solution, num_guesses);
     } else {
+        solver_none.original_heuristic_ = original_heuristic;
         return solver_none.SolveSudoku(puzzle, limit, solution, num_guesses);
     }
 }

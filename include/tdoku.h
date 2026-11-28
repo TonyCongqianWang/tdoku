@@ -45,7 +45,10 @@ bool TdokuMinimize(bool pencilmark, bool monotonic, char *puzzle);
  * @param limit
  *       The maximum number of solutions to find before returning.
  * @param configuration
- *       Solver-specific configuration. Unused for tdoku.
+ *       Solver-specific configuration. Bits 0..7: if nonzero, a solution is returned even when
+ *       limit > 1. Bits 8..15: 0 (default) branches with the branch-volume heuristic (AVX2
+ *       builds; the original heuristic otherwise), 1 (i.e. configuration 1 << 8) with the
+ *       original heuristic.
  * @param solution
  *       Pointer to an 81 character array to receive the solution. Tdoku will only return
  *       a solution if it was given a limit of 1. Otherwise it's assumed we're just interested
