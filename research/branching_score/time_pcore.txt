@@ -1,0 +1,96 @@
+## set hard limit 2 cpu 2
+orig  n 1000 sols 1000 guesses 52.26 median_ns 34105.1 min_ns 34081.6
+ixg   n 1000 sols 1000 guesses 29.73 median_ns 24686.1 min_ns 24534.6
+ds    n 1000 sols 1000 guesses 29.42 median_ns 23935.5 min_ns 23856.4
+dv2   n 1000 sols 1000 guesses 28.29 median_ns 23619.9 min_ns 23564.5
+lv2   n 1000 sols 1000 guesses 26.13 median_ns 22902.3 min_ns 22851.4
+## set hard11 limit 2 cpu 2
+orig  n 1000 sols 1000 guesses 60.84 median_ns 40539.7 min_ns 40492.3
+ixg   n 1000 sols 1000 guesses 39.83 median_ns 32842.8 min_ns 32770.2
+ds    n 1000 sols 1000 guesses 37.90 median_ns 30887.7 min_ns 30839.4
+dv2   n 1000 sols 1000 guesses 36.65 median_ns 30739.0 min_ns 30715.2
+lv2   n 1000 sols 1000 guesses 34.29 median_ns 30361.1 min_ns 30345.5
+## set hard1106 limit 2 cpu 2
+orig  n 101 sols 101 guesses 106.79 median_ns 65784.8 min_ns 65694.4
+ixg   n 101 sols 101 guesses 67.53 median_ns 52934.5 min_ns 52715.7
+ds    n 101 sols 101 guesses 64.91 median_ns 49982.0 min_ns 49935.8
+dv2   n 101 sols 101 guesses 59.43 median_ns 47035.8 min_ns 46956.9
+lv2   n 101 sols 101 guesses 56.60 median_ns 47660.0 min_ns 47504.9
+## set magictour limit 2 cpu 2
+orig  n 447 sols 447 guesses 8.17 median_ns 7304.8 min_ns 7124.9
+ixg   n 447 sols 447 guesses 5.27 median_ns 6157.3 min_ns 5997.3
+ds    n 447 sols 447 guesses 5.45 median_ns 6129.7 min_ns 6017.7
+dv2   n 447 sols 447 guesses 4.90 median_ns 6219.8 min_ns 5768.0
+lv2   n 447 sols 447 guesses 4.71 median_ns 6032.3 min_ns 5828.1
+## set 17clue limit 2 cpu 2
+orig  n 2000 sols 2000 guesses 0.54 median_ns 2816.4 min_ns 2793.3
+ixg   n 2000 sols 2000 guesses 0.37 median_ns 2756.2 min_ns 2725.6
+ds    n 2000 sols 2000 guesses 0.39 median_ns 2726.6 min_ns 2713.8
+dv2   n 2000 sols 2000 guesses 0.35 median_ns 2747.8 min_ns 2713.7
+lv2   n 2000 sols 2000 guesses 0.35 median_ns 2792.2 min_ns 2783.2
+## set unbiased limit 2 cpu 2
+orig  n 2000 sols 2000 guesses 1.06 median_ns 2521.8 min_ns 2509.5
+ixg   n 2000 sols 2000 guesses 0.88 median_ns 2521.9 min_ns 2515.5
+ds    n 2000 sols 2000 guesses 0.95 median_ns 2531.6 min_ns 2520.7
+dv2   n 2000 sols 2000 guesses 0.89 median_ns 2531.7 min_ns 2520.1
+lv2   n 2000 sols 2000 guesses 0.86 median_ns 2554.3 min_ns 2540.8
+## set pm limit 2 cpu 2
+orig  n 505 sols 505 guesses 8688.88 median_ns 4920294.3 min_ns 4899532.0
+ixg   n 505 sols 505 guesses 9384.30 median_ns 5458835.2 min_ns 5440547.8
+ds    n 505 sols 505 guesses 2946.97 median_ns 2159685.5 min_ns 2155833.6
+dv2   n 505 sols 505 guesses 2444.45 median_ns 1870635.6 min_ns 1869007.7
+lv2   n 505 sols 505 guesses 1656.62 median_ns 1378426.7 min_ns 1377056.7
+## set pm_easy limit 2 cpu 2
+orig  n 342 sols 342 guesses 5156.40 median_ns 3288911.0 min_ns 3285413.4
+ixg   n 342 sols 342 guesses 6906.69 median_ns 4462512.5 min_ns 4457703.4
+ds    n 342 sols 342 guesses 2362.02 median_ns 1841904.2 min_ns 1840331.7
+dv2   n 342 sols 342 guesses 1740.96 median_ns 1443249.2 min_ns 1442023.7
+lv2   n 342 sols 342 guesses 1342.89 median_ns 1191562.7 min_ns 1189374.7
+## set hard limit 1 cpu 2
+orig  n 1000 sols 1000 guesses 29.00 median_ns 18385.9 min_ns 18367.6
+ixg   n 1000 sols 1000 guesses 17.45 median_ns 13914.7 min_ns 13843.2
+ds    n 1000 sols 1000 guesses 17.21 median_ns 13381.5 min_ns 13347.1
+dv2   n 1000 sols 1000 guesses 16.71 median_ns 13333.7 min_ns 13322.7
+lv2   n 1000 sols 1000 guesses 15.38 median_ns 12948.1 min_ns 12920.4
+## set hard11 limit 1 cpu 2
+orig  n 1000 sols 1000 guesses 33.59 median_ns 21584.5 min_ns 21564.8
+ixg   n 1000 sols 1000 guesses 22.03 median_ns 17776.0 min_ns 17743.4
+ds    n 1000 sols 1000 guesses 21.13 median_ns 16794.3 min_ns 16782.6
+dv2   n 1000 sols 1000 guesses 20.52 median_ns 16603.2 min_ns 16591.6
+lv2   n 1000 sols 1000 guesses 19.20 median_ns 16283.6 min_ns 16236.2
+## set hard1106 limit 1 cpu 2
+orig  n 101 sols 101 guesses 58.32 median_ns 35259.1 min_ns 35171.4
+ixg   n 101 sols 101 guesses 36.35 median_ns 28275.4 min_ns 28035.3
+ds    n 101 sols 101 guesses 37.23 median_ns 28003.4 min_ns 27888.3
+dv2   n 101 sols 101 guesses 32.72 median_ns 25241.6 min_ns 25126.3
+lv2   n 101 sols 101 guesses 30.61 median_ns 25130.6 min_ns 25082.6
+## set magictour limit 1 cpu 2
+orig  n 447 sols 447 guesses 5.68 median_ns 4915.0 min_ns 4890.6
+ixg   n 447 sols 447 guesses 4.17 median_ns 4455.8 min_ns 4428.3
+ds    n 447 sols 447 guesses 4.28 median_ns 4455.7 min_ns 4398.9
+dv2   n 447 sols 447 guesses 3.97 median_ns 4359.0 min_ns 4349.4
+lv2   n 447 sols 447 guesses 3.72 median_ns 4416.9 min_ns 4380.5
+## set 17clue limit 1 cpu 2
+orig  n 2000 sols 2000 guesses 0.43 median_ns 2667.9 min_ns 2662.7
+ixg   n 2000 sols 2000 guesses 0.34 median_ns 2692.5 min_ns 2669.9
+ds    n 2000 sols 2000 guesses 0.34 median_ns 2655.2 min_ns 2648.7
+dv2   n 2000 sols 2000 guesses 0.32 median_ns 2668.9 min_ns 2660.1
+lv2   n 2000 sols 2000 guesses 0.32 median_ns 2676.5 min_ns 2667.0
+## set unbiased limit 1 cpu 2
+orig  n 2000 sols 2000 guesses 0.99 median_ns 2319.0 min_ns 2315.1
+ixg   n 2000 sols 2000 guesses 0.83 median_ns 2349.8 min_ns 2346.2
+ds    n 2000 sols 2000 guesses 0.89 median_ns 2349.8 min_ns 2338.6
+dv2   n 2000 sols 2000 guesses 0.83 median_ns 2355.9 min_ns 2347.7
+lv2   n 2000 sols 2000 guesses 0.81 median_ns 2368.9 min_ns 2367.3
+## set pm limit 1 cpu 2
+orig  n 505 sols 505 guesses 4540.74 median_ns 2551600.7 min_ns 2542790.0
+ixg   n 505 sols 505 guesses 4294.13 median_ns 2527048.6 min_ns 2515992.7
+ds    n 505 sols 505 guesses 1454.89 median_ns 1050338.2 min_ns 1049096.5
+dv2   n 505 sols 505 guesses 1234.26 median_ns 923663.2 min_ns 922246.5
+lv2   n 505 sols 505 guesses 855.02 median_ns 712888.7 min_ns 712545.7
+## set pm_easy limit 1 cpu 2
+orig  n 342 sols 342 guesses 2821.81 median_ns 1797007.6 min_ns 1794526.0
+ixg   n 342 sols 342 guesses 3885.82 median_ns 2499941.5 min_ns 2496320.6
+ds    n 342 sols 342 guesses 1220.33 median_ns 945312.8 min_ns 944849.5
+dv2   n 342 sols 342 guesses 884.16 median_ns 729198.3 min_ns 728352.7
+lv2   n 342 sols 342 guesses 649.72 median_ns 578059.6 min_ns 577670.1

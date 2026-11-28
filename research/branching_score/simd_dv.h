@@ -23,6 +23,7 @@ constexpr double S = 24.0;
 struct Params {
     double al = 1.1, eps = 1e-4, g3 = -0.15, g4 = 0.1, gR = 0.015;  // fit3_dv_wide
     int cpick = 1;
+    int corr = 1;  // 0: LSE becomes min (no correction)
 };
 
 struct Tables {
@@ -35,7 +36,7 @@ struct Tables {
         for (int k = 0; k < 16; k++) {
             q[k] = k == 0 ? 255 : k <= 6 ? (uint8_t) lround(S * p.al * log2(6.0 / k)) : 0;
             qn[k] = k >= 1 && k <= 6 ? (uint8_t) lround(S * p.al * log2(6.0 / k)) : 0;
-            corr[k] = (uint8_t) lround(S * log2(1.0 + pow(2.0, -(8.0 * k + 3.5) / S)));
+            corr[k] = p.corr ? (uint8_t) lround(S * log2(1.0 + pow(2.0, -(8.0 * k + 3.5) / S))) : 0;
         }
         q_lut = _mm256_broadcastsi128_si256(_mm_load_si128((const __m128i *) q));
         qn_lut = _mm256_broadcastsi128_si256(_mm_load_si128((const __m128i *) qn));
@@ -69,16 +70,18 @@ struct LseConst {
 inline const LseConst g_lse{};
 
 // LSE(a, b) = min - corr(|a - b|), no correction when the larger value is 255 ("volume 0")
+template <bool kGate = true>
 inline __m256i Lse(const __m256i &a, const __m256i &b, const __m256i &lut) {
     __m256i mn = _mm256_min_epu8(a, b), mx = _mm256_max_epu8(a, b);
     __m256i idx = _mm256_gf2p8affine_epi64_epi8(_mm256_sub_epi8(mx, mn), g_lse.idx_aff, 0);
-    __m256i corr = _mm256_andnot_si256(_mm256_cmpeq_epi8(mx, g_lse.ff), _mm256_shuffle_epi8(lut, idx));
+    __m256i corr = _mm256_shuffle_epi8(lut, idx);
+    if (kGate) corr = _mm256_andnot_si256(_mm256_cmpeq_epi8(mx, g_lse.ff), corr);
     return _mm256_subs_epu8(mn, corr);
 }
 
-inline int LseRef(int a, int b, const Tables &t) {
+inline int LseRef(int a, int b, const Tables &t, bool gate = true) {
     int mn = a < b ? a : b, mx = a < b ? b : a, dd = (mx - mn) >> 3;
-    int corr = (dd < 16 && mx != 255) ? t.corr[dd] : 0;
+    int corr = (dd < 16 && (mx != 255 || !gate)) ? t.corr[dd] : 0;
     return mn - corr < 0 ? 0 : mn - corr;
 }
 

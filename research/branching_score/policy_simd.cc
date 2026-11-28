@@ -1,7 +1,7 @@
 // End-to-end guess counts of the SIMD candidate choosers (no gate, limit 2), with an optional
 // exact check of every choice against a scalar mirror of the fixed-point score.
 //
-// usage: policy_simd <puzzles> <max_puzzles> <ds|dv|lv> [cap=N] [check] [key=value ...]
+// usage: policy_simd <puzzles> <max_puzzles> <ds|dv|lv|dv2|lv2> [cap=N] [check] [key=value ...]
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -13,6 +13,8 @@
 #include "simd_ds.h"
 #include "simd_dv.h"
 #include "simd_lv.h"
+#include "simd_lv2.h"
+#include "simd_dv2.h"
 
 namespace {
 
@@ -126,6 +128,73 @@ struct LV : Policy {
     }
 };
 
+
+struct LV2 : Policy {
+    slv2::Params p;
+    slv2::Tables *t = nullptr;
+    bool Choose(const State &s, int &b, int &d, int &c) override { return slv2::Choose(s, *t, b, d, c); }
+    void Check(const State &s, int cb, int cd, int cc) override {
+        int best = 0, bb = -1, bd = -1, bc = -1;
+        for (int b = 0; b < 6; b++) {
+            Lanes x = BandLanes(s, b);
+            int R = Popcount(x);
+            for (int d = 0; d < 9; d++) {
+                int n = CountDigit(x, d);
+                if (n < 2) continue;
+                unsigned cs = 0;
+                for (int c = 0; c < 6; c++) cs |= (unsigned) (x.l[c] >> d & 1) << c;
+                int kp[6][3] = {}, km[6][3] = {}, nj[3];
+                for (int c = 0; c < 6; c++) {
+                    if (!(cs >> c & 1)) continue;
+                    for (int j = 0; j < 3; j++) {
+                        Crossing(s, b, d, 1u << c, j, kp[c][j], nj[j]);
+                        Crossing(s, b, d, cs & ~(1u << c), j, km[c][j], nj[j]);
+                    }
+                }
+                int cbest = -1;
+                int y = slv2::KeyRef(*t, cs, kp, km, nj, n, R, cbest);
+                if (y > best) { best = y; bb = b; bd = d; bc = cbest; }
+            }
+        }
+        if (bb != cb || bd != cd || bc != cc) {
+            fprintf(stderr, "LV2 mismatch: simd %d %d %d  ref %d %d %d\n", cb, cd, cc, bb, bd, bc);
+            abort();
+        }
+    }
+};
+
+
+struct DV2 : Policy {
+    sdv2::Params p;
+    sdv2::Tables *t = nullptr;
+    bool Choose(const State &s, int &b, int &d, int &c) override { return sdv2::Choose(s, *t, b, d, c); }
+    void Check(const State &s, int cb, int cd, int cc) override {
+        int best = 0, bb = -1, bd = -1, bc = -1;
+        for (int b = 0; b < 6; b++) {
+            Lanes x = BandLanes(s, b);
+            int R = Popcount(x);
+            for (int d = 0; d < 9; d++) {
+                int n = CountDigit(x, d);
+                if (n < 2) continue;
+                unsigned cs = 0;
+                int k[6][3] = {}, nj[3];
+                for (int c = 0; c < 6; c++) {
+                    if (!(x.l[c] >> d & 1)) continue;
+                    cs |= 1u << c;
+                    for (int j = 0; j < 3; j++) Crossing(s, b, d, 1u << c, j, k[c][j], nj[j]);
+                }
+                int cbest;
+                int y = sdv2::KeyRef(*t, cs, k, nj, n, R, cbest);
+                if (y > best) { best = y; bb = b; bd = d; bc = cbest; }
+            }
+        }
+        if (bb != cb || bd != cd || bc != cc) {
+            fprintf(stderr, "DV2 mismatch: simd %d %d %d  ref %d %d %d\n", cb, cd, cc, bb, bd, bc);
+            abort();
+        }
+    }
+};
+
 struct Search {
     Policy *pol;
     bool check = false;
@@ -148,11 +217,13 @@ struct Search {
 }  // namespace
 
 int main(int argc, char **argv) {
-    if (argc < 4) { fprintf(stderr, "usage: policy_simd <puzzles> <max> <ds|dv|lv> [cap=N] [check] [k=v]\n"); return 1; }
+    if (argc < 4) { fprintf(stderr, "usage: policy_simd <puzzles> <max> <ds|dv|lv|dv2|lv2> [cap=N] [check] [k=v]\n"); return 1; }
     std::string which = argv[3];
     DS ds;
     DV dv;
     LV lv;
+    LV2 lv2;
+    DV2 dv2;
     Policy *pol = nullptr;
     bool check = false;
     size_t cap = SIZE_MAX, capped = 0, checks = 0;
@@ -164,16 +235,19 @@ int main(int argc, char **argv) {
         std::string k = a.substr(0, eq);
         double v = atof(a.substr(eq + 1).c_str());
         if (k == "sn") ds.p.sn = v;
-        else if (k == "g3") ds.p.g3 = dv.p.g3 = lv.p.g3 = v;
-        else if (k == "g4") ds.p.g4 = dv.p.g4 = lv.p.g4 = v;
-        else if (k == "gR") ds.p.gR = dv.p.gR = lv.p.gR = v;
-        else if (k == "al") dv.p.al = lv.p.al = v;
+        else if (k == "g3") ds.p.g3 = dv.p.g3 = lv.p.g3 = lv2.p.g3 = dv2.p.g3 = v;
+        else if (k == "g4") ds.p.g4 = dv.p.g4 = lv.p.g4 = lv2.p.g4 = dv2.p.g4 = v;
+        else if (k == "gR") ds.p.gR = dv.p.gR = lv.p.gR = lv2.p.gR = dv2.p.gR = v;
+        else if (k == "al") dv.p.al = lv.p.al = lv2.p.al = dv2.p.al = v;
         else if (k == "eps") dv.p.eps = lv.p.eps = v;
-        else if (k == "be") lv.p.be = v;
-        else if (k == "cpick") dv.p.cpick = (int) v;
+        else if (k == "be") lv.p.be = lv2.p.be = v;
+        else if (k == "corr") dv.p.corr = lv.p.corr = (int) v;
+        else if (k == "cpick") dv.p.cpick = dv2.p.cpick = (int) v;
         else { fprintf(stderr, "unknown key %s\n", k.c_str()); return 1; }
     }
     if (which == "ds") { ds.t = new sds::Tables(ds.p); pol = &ds; }
+    else if (which == "dv2") { dv2.t = new sdv2::Tables(dv2.p); pol = &dv2; }
+    else if (which == "lv2") { lv2.t = new slv2::Tables(lv2.p); pol = &lv2; }
     else if (which == "lv") { lv.t = new slv::Tables(lv.p); pol = &lv; }
     else if (which == "dv") { dv.t = new sdv::Tables(dv.p); pol = &dv; }
     else { fprintf(stderr, "unknown policy\n"); return 1; }

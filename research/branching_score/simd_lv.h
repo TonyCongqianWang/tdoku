@@ -17,9 +17,14 @@
 namespace slv {
 
 constexpr double S = sdv::S;
+#ifndef LV_GATE
+#define LV_GATE 1
+#endif
+constexpr bool kLvGate = LV_GATE;
 
 struct Params {
     double al = 1.1, be = 0.6, eps = 1e-3, g3 = -0.25, g4 = -0.1, gR = 0.015;  // fit3_lv_wide
+    int corr = 1;
 };
 
 const int kE[6][3] = {{0, 1, 2}, {1, 2, 0}, {2, 0, 1}, {2, 1, 0}, {0, 2, 1}, {1, 0, 2}};
@@ -34,7 +39,7 @@ struct Tables {
     __m256i bits[3];        // member bits of the pair vectors
     __m256i pbits[3][3];    // partner bits of pair vector k at peer j
     __m256i ubits02[3], ubits1[3];  // configurations using elements [0 | 2] and [1 | 1] of peer j
-    __m256i cbit[6], ubit[3][3];  // set1(1 << c); configs using element e at peer p
+    __m256i cbit[6], ubit[3][3], ff;  // set1(1 << c); configs using element e at peer p
     int ueps, rq;
     alignas(32) uint8_t q[16], qn[16], corr[16], fp[16], fm[16], g8[16];
     int g[8];
@@ -43,7 +48,7 @@ struct Tables {
     static __m256i Lanes(int lo, int hi) {
         return _mm256_set_m128i(_mm_set1_epi8((char) hi), _mm_set1_epi8((char) lo));
     }
-    explicit Tables(const Params &p) : dvt(sdv::Params{p.al, p.eps, p.g3, p.g4, p.gR, 0}) {
+    explicit Tables(const Params &p) : dvt(sdv::Params{p.al, p.eps, p.g3, p.g4, p.gR, 0, p.corr}) {
         for (int k = 0; k < 16; k++) {
             q[k] = k == 0 ? 255 : k <= 6 ? (uint8_t) lround(S * p.al * log2(6.0 / k)) : 0;
             qn[k] = k >= 1 && k <= 6 ? (uint8_t) lround(S * p.al * log2(6.0 / k)) : 0;
@@ -58,6 +63,7 @@ struct Tables {
             for (int j = 0; j < 3; j++)
                 pbits[k][j] = Lanes(1 << Partner(kPair[k][0], j), 1 << Partner(kPair[k][1], j));
         }
+        ff = _mm256_set1_epi8(-1);
         for (int c = 0; c < 6; c++) cbit[c] = _mm256_set1_epi8((char) (1 << c));
         for (int j = 0; j < 3; j++)
             for (int e = 0; e < 3; e++) {
@@ -107,14 +113,20 @@ inline bool Choose(const StateT &state, const Tables &T, int &out_b, int &out_d,
 #pragma GCC unroll 3
     for (int x = 0; x < 3; x++) {
         const __m256i cfg = f.cfg[x];
-        __m256i member[6];
-        for (int c = 0; c < 6; c++) member[c] = _mm256_cmpeq_epi8(_mm256_and_si256(cfg, T.cbit[c]), T.cbit[c]);
+        __m256i member[6], nonmember[6];
+        for (int c = 0; c < 6; c++) {
+            nonmember[c] = _mm256_cmpeq_epi8(_mm256_and_si256(cfg, T.cbit[c]), zero);
+            member[c] = _mm256_xor_si256(nonmember[c], T.ff);
+        }
+        // own-band fractions are folded into peer 0 (saturating adds of non-negative values commute)
+        __m256i fp = _mm256_shuffle_epi8(T.fp_lut, f.n[x]), fm = _mm256_shuffle_epi8(T.fm_lut, f.n[x]);
         __m256i qp[3][3], qx[3][3], qt[3];
         for (int p = 0; p < 3; p++) {
             __m256i m[3];
             for (int e = 0; e < 3; e++) {
                 const __m256i &E = f.E[x][p][e];
                 qp[p][e] = _mm256_shuffle_epi8(T.q_lut, sfront::Pop6b(E));
+                if (p == 0) qp[p][e] = _mm256_adds_epu8(qp[p][e], fp);
                 m[e] = _mm256_andnot_si256(_mm256_cmpeq_epi8(_mm256_and_si256(cfg, T.ubit[p][e]), zero), E);
             }
             __m256i x0 = _mm256_or_si256(m[1], m[2]), x1 = _mm256_or_si256(m[0], m[2]);
@@ -123,8 +135,11 @@ inline bool Choose(const StateT &state, const Tables &T, int &out_b, int &out_d,
             qx[p][1] = _mm256_shuffle_epi8(T.q_lut, sfront::Pop6b(x1));
             qx[p][2] = _mm256_shuffle_epi8(T.q_lut, sfront::Pop6b(x2));
             qt[p] = _mm256_shuffle_epi8(T.q_lut, sfront::Pop6b(t));
+            if (p == 0) {
+                for (int e = 0; e < 3; e++) qx[p][e] = _mm256_adds_epu8(qx[p][e], fm);
+                qt[p] = _mm256_adds_epu8(qt[p], fm);
+            }
         }
-        __m256i fp = _mm256_shuffle_epi8(T.fp_lut, f.n[x]), fm = _mm256_shuffle_epi8(T.fm_lut, f.n[x]);
         __m256i lmax = zero;
 #pragma GCC unroll 6
         for (int c = 0; c < 6; c++) {
@@ -132,11 +147,12 @@ inline bool Choose(const StateT &state, const Tables &T, int &out_b, int &out_d,
 #pragma GCC unroll 3
             for (int p = 0; p < 3; p++) {
                 int e = kE[c][p];
-                __m256i qm = _mm256_blendv_epi8(qx[p][e], qt[p], member[Partner(c, p)]);
+                // partner in C: |T| (the smaller Q), else |X_e|:  min(Q(X_e), Q(T) | nonmember(partner))
+                __m256i qm = _mm256_min_epu8(qx[p][e], _mm256_or_si256(qt[p], nonmember[Partner(c, p)]));
                 up = p == 0 ? qp[p][e] : _mm256_adds_epu8(up, qp[p][e]);
                 um = p == 0 ? qm : _mm256_adds_epu8(um, qm);
             }
-            __m256i l = sdv::Lse(_mm256_adds_epu8(up, fp), _mm256_adds_epu8(um, fm), T.corr_lut);
+            __m256i l = kLvGate ? sdv::Lse<true>(up, um, T.corr_lut) : sdv::Lse<false>(up, um, T.corr_lut);
             l = _mm256_and_si256(l, member[c]);
             lv[x][c] = l;
             lmax = _mm256_max_epu8(lmax, l);
@@ -182,7 +198,7 @@ inline unsigned KeyRef(const Tables &T, unsigned cs, const int kp[6][3], const i
         int up = std::min(255, std::min(255, T.q[kp[c][0]] + T.q[kp[c][1]]) + T.q[kp[c][2]]);
         int um = std::min(255, std::min(255, T.q[km[c][0]] + T.q[km[c][1]]) + T.q[km[c][2]]);
         int vp = std::min(255, up + T.fp[n]), vm = std::min(255, um + T.fm[n]);
-        int L = sdv::LseRef(vp, vm, T.dvt);
+        int L = sdv::LseRef(vp, vm, T.dvt, kLvGate);
         int x = L == 255 ? T.ueps : std::min(L - qnsum, T.ueps);
         unsigned key = (unsigned) (512 - x + T.g[n] + ((R * T.rq) >> 4)) & 0xffff;
         if (key < best) { best = key; cbest = c; }

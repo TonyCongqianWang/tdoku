@@ -9,3 +9,4 @@ policy_simd
 test_front
 policy_simd_fit
 mca/*.s
+time_e2e

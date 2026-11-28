@@ -2,6 +2,40 @@
 
 There is no end-to-end timing yet. Guess counts are deterministic, and costs are llvm-mca estimates of one cold call of the chooser.
 
+## Update: optimized LV2 / DV2 and end-to-end timing
+
+**Optimized versions** (`simd_lv2.h`, `simd_dv2.h`). Both were already 8-bit integer log arithmetic with `pshufb` tables. On top of that:
+- the 6 bands × 9 digits are packed into 2 vectors instead of 3;
+- the − branch union selects with `or` + `min` instead of `vpblendvb` (3 uops);
+- the own-band terms are folded into the first peer's tables;
+- the "volume 0" guard is dropped in LV (identical guesses);
+- the band term is computed with SAD;
+- the keys are 8-bit (`avg(L, 255 − B)`, no eps clamp).
+
+Both are again verified exactly against scalar mirrors, and refitting confirmed that their guess counts match LV/DV.
+
+| chooser | instructions | cycles (mca, ADL-P) | val guesses vs exact MRV |
+|---|---|---|---|
+| DS | 771 | 241 | .708 |
+| DV2 | 807 | 274 (DV: 335) | .650 |
+| LV2 | 1271 | 394 (LV: 523 → 506) | .592 |
+
+**End-to-end timing** (`time_e2e.cc`, `run_time.sh`): the validation split, inside the real Tdoku search, policies timed round robin, median of 7 passes. Values are time relative to the original solver, geomean over the 8 sets (full tables in `time_pcore_table.txt`, `time_ecore_table.txt`).
+
+| | orig | ix gated (PR) | DS | DV2 | LV2 |
+|---|---|---|---|---|---|
+| P-core, limit 2 | 1 | .935 | .731 | .691 | **.647** |
+| P-core, limit 1 | 1 | .945 | .739 | .692 | **.649** |
+| E-core, limit 2 | 1 | .938 | .739 | .697 | **.662** |
+| E-core, limit 1 | 1 | .946 | .751 | .707 | **.669** |
+
+- **Hard standard sets:** LV2 is 0.67–0.75× the original on a P-core, vs 0.72–0.81× for the PR's gated ix. On the E-core, DV2 ties LV2 there.
+- **Pencilmark:** LV2 is 0.28–0.36× the original, vs 1.1–1.36× for gated ix.
+- **Easy sets** (17clue, unbiased): everything is within ±3% of the original; LV2 is up to 3.3% slower on unbiased on the E-core.
+- **Cost per guess node:** a guess node costs on the order of 400–600 ns in the original solver, which is far above the chooser costs. That explains why the most expensive chooser wins.
+
+The sections below describe the first (unpacked) versions.
+
 ## Candidates
 
 The notation follows SPEC.md: band B, digit d, configuration c, n = |C(B,d)|, crossing survival ρ_j = k_j / n_j, R = configurations of B. Each score is minimised over all unfixed bands and all digits with n ≥ 2.
