@@ -1,0 +1,13 @@
+# binaries, objects, captured states and generated assembly (rebuild with dsel/build.sh)
+dsel/bench_count
+dsel/bench_e2e
+dsel/capture
+dsel/mbench
+dsel/perpuzzle
+dsel/t
+dsel/tc
+dsel/obj/
+dsel/states/
+dsel/asm/
+dsel/*_raw.txt
+rb/build/

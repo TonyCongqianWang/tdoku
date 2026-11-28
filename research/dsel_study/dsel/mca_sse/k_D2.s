@@ -1,0 +1,53 @@
+endbr64
+movdqa	%xmm0, %xmm3
+movdqa	%xmm0, %xmm5
+movdqa	%xmm0, %xmm2
+psrlq	$16, %xmm3
+psrlq	$32, %xmm5
+movdqa	%xmm0, %xmm4
+pxor	%xmm3, %xmm2
+punpckhqdq	%xmm0, %xmm4
+pand	%xmm0, %xmm3
+movdqa	%xmm2, %xmm1
+psrlq	$48, %xmm0
+pand	%xmm5, %xmm2
+por	%xmm3, %xmm2
+movdqa	%xmm4, %xmm6
+movdqa	%xmm0, %xmm3
+pxor	%xmm4, %xmm3
+psrlq	$16, %xmm6
+pxor	%xmm5, %xmm1
+pand	%xmm4, %xmm0
+movdqa	%xmm3, %xmm5
+pand	%xmm6, %xmm3
+pxor	%xmm6, %xmm5
+por	%xmm3, %xmm0
+movdqa	%xmm1, %xmm3
+pand	%xmm5, %xmm3
+movdqa	%xmm2, %xmm4
+pxor	%xmm5, %xmm1
+pxor	%xmm0, %xmm4
+movdqa	%xmm3, %xmm5
+pand	%xmm0, %xmm2
+pxor	%xmm4, %xmm5
+pand	%xmm4, %xmm3
+punpcklwd	%xmm5, %xmm1
+por	%xmm2, %xmm3
+punpckldq	%xmm3, %xmm1
+movq	%xmm1, %rdx
+movq	%rdx, %rsi
+movq	%rdx, %rdi
+shrq	$32, %rsi
+shrq	$16, %rdi
+movl	%esi, %eax
+movl	%edi, %ecx
+orl	%edx, %eax
+andl	$511, %ecx
+andl	$511, %eax
+notl	%eax
+andl	%ecx, %eax
+je	.L38
+rep bsfl	%eax, %eax
+leaq	_ZN4dselL10kValueMaskE(%rip), %rdx
+salq	$4, %rax
+movdqa	(%rdx,%rax), %xmm0

@@ -1,0 +1,56 @@
+final_gated 17clue n 2000 mean 0.355 geo1 1.211
+final_gated hard1106 n 157 mean 66.841 geo1 60.547
+final_gated hard11 n 1000 mean 40.501 geo1 38.597
+final_gated hard n 1000 mean 29.972 geo1 28.700
+final_gated magictour n 571 mean 6.599 geo1 5.457
+final_gated pm_easy n 200 mean 5646.225 geo1 2557.419
+final_gated pm n 200 mean 38317.545 geo1 3540.819
+final_gated unbiased n 2000 mean 0.867 geo1 1.616
+L0 17clue n 2000 mean 0.471 geo1 1.241 sols 0/2000/0 capped 0
+L0 hard1106 n 157 mean 113.414 geo1 100.030 sols 0/157/0 capped 0
+L0 hard11 n 1000 mean 61.498 geo1 56.676 sols 0/1000/0 capped 0
+L0 hard n 1000 mean 52.389 geo1 46.988 sols 0/1000/0 capped 0
+L0 magictour n 571 mean 9.340 geo1 7.046 sols 0/571/0 capped 0
+L0 pm_easy n 200 mean 3954.890 geo1 1732.475 sols 0/200/0 capped 0
+L0 pm n 200 mean 36903.620 geo1 3197.729 sols 0/200/0 capped 0
+L0 unbiased n 2000 mean 1.093 geo1 1.719 sols 0/2000/0 capped 0
+L1 17clue n 2000 mean 0.349 geo1 1.211 sols 0/2000/0 capped 0
+L1 hard1106 n 157 mean 63.344 geo1 57.961 sols 0/157/0 capped 0
+L1 hard11 n 1000 mean 39.352 geo1 37.622 sols 0/1000/0 capped 0
+L1 hard n 1000 mean 28.913 geo1 27.822 sols 0/1000/0 capped 0
+L1 magictour n 571 mean 6.217 geo1 5.402 sols 0/571/0 capped 0
+L1 pm_easy n 200 mean 11842.620 geo1 5402.732 sols 0/200/0 capped 0
+L1 pm n 200 mean 70286.605 geo1 7219.348 sols 2/198/0 capped 2
+L1 unbiased n 2000 mean 0.867 geo1 1.616 sols 0/2000/0 capped 0
+L2 17clue n 2000 mean 0.348 geo1 1.209 sols 0/2000/0 capped 0
+L2 hard1106 n 157 mean 61.446 geo1 56.638 sols 0/157/0 capped 0
+L2 hard11 n 1000 mean 37.864 geo1 36.352 sols 0/1000/0 capped 0
+L2 hard n 1000 mean 28.303 geo1 27.264 sols 0/1000/0 capped 0
+L2 magictour n 571 mean 6.335 geo1 5.327 sols 0/571/0 capped 0
+L2 pm_easy n 200 mean 11333.045 geo1 5028.403 sols 0/200/0 capped 0
+L2 pm n 200 mean 69467.215 geo1 6875.988 sols 2/198/0 capped 2
+L2 unbiased n 2000 mean 0.868 geo1 1.618 sols 0/2000/0 capped 0
+L3 17clue n 2000 mean 0.361 geo1 1.211 sols 0/2000/0 capped 0
+L3 hard1106 n 157 mean 60.611 geo1 55.986 sols 0/157/0 capped 0
+L3 hard11 n 1000 mean 36.127 geo1 34.489 sols 0/1000/0 capped 0
+L3 hard n 1000 mean 27.044 geo1 26.032 sols 0/1000/0 capped 0
+L3 magictour n 571 mean 6.023 geo1 5.248 sols 0/571/0 capped 0
+L3 pm_easy n 200 mean 3375.950 geo1 1591.620 sols 0/200/0 capped 0
+L3 pm n 200 mean 41231.025 geo1 1756.716 sols 0/200/0 capped 0
+L3 unbiased n 2000 mean 0.877 geo1 1.623 sols 0/2000/0 capped 0
+L4 17clue n 2000 mean 0.365 geo1 1.213 sols 0/2000/0 capped 0
+L4 hard1106 n 157 mean 56.134 geo1 52.709 sols 0/157/0 capped 0
+L4 hard11 n 1000 mean 34.280 geo1 32.903 sols 0/1000/0 capped 0
+L4 hard n 1000 mean 26.172 geo1 25.305 sols 0/1000/0 capped 0
+L4 magictour n 571 mean 6.009 geo1 5.130 sols 0/571/0 capped 0
+L4 pm_easy n 200 mean 1444.585 geo1 833.417 sols 0/200/0 capped 0
+L4 pm n 200 mean 18218.050 geo1 877.255 sols 0/200/0 capped 0
+L4 unbiased n 2000 mean 0.876 geo1 1.625 sols 0/2000/0 capped 0
+L5 17clue n 2000 mean 0.349 geo1 1.209 sols 0/2000/0 capped 0
+L5 hard1106 n 157 mean 55.503 geo1 51.861 sols 0/157/0 capped 0
+L5 hard11 n 1000 mean 33.880 geo1 32.634 sols 0/1000/0 capped 0
+L5 hard n 1000 mean 25.462 geo1 24.716 sols 0/1000/0 capped 0
+L5 magictour n 571 mean 5.673 geo1 4.993 sols 0/571/0 capped 0
+L5 pm_easy n 200 mean 1634.665 geo1 899.096 sols 0/200/0 capped 0
+L5 pm n 200 mean 20435.645 geo1 866.277 sols 0/200/0 capped 0
+L5 unbiased n 2000 mean 0.859 geo1 1.615 sols 0/2000/0 capped 0

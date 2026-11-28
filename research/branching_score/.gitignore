@@ -1,0 +1,6 @@
+# binaries (rebuild: see SPEC.md / build commands in policy_eval.cc)
+oracle
+policy_eval
+final_gated
+# oracle CSVs (131 MB; regenerate with gather.sh)
+data/

@@ -1,0 +1,40 @@
+
+L1 final ungated  params {}  train 0.996  (7s, 1 evaluations so far)
+geomean(guesses+1) relative to exact MRV (end to end, limit 2, no gate); [capped puzzles]
+policy                               hard       hard11     hard1106    magictour       17clue     unbiased           pm      pm_easy     mean
+L0 exact MRV                    1.000        1.000        1.000        1.000        1.000        1.000        1.000 [2]    1.000        1.000
+L1 final ungated                0.565        0.664        0.603        0.769        0.971        0.939        2.418 [2]    3.570        1.040
+
+L2 + w_R*R  params {'wR': 0.02}  train 0.965  (23s, 9 evaluations so far)
+geomean(guesses+1) relative to exact MRV (end to end, limit 2, no gate); [capped puzzles]
+policy                               hard       hard11     hard1106    magictour       17clue     unbiased           pm      pm_easy     mean
+L0 exact MRV                    1.000        1.000        1.000        1.000        1.000        1.000        1.000 [2]    1.000        1.000
+L1 final ungated                0.565        0.664        0.603        0.769        0.971        0.939        2.418 [2]    3.570        1.040
+L2 + w_R*R                      0.553        0.641        0.596        0.754        0.969        0.944        2.296 [2]    3.338        1.014
+
+L3 + n>=3 candidates  params {'wR': 0.05, 'f3': 0.0, 'f4': 1.0}  train 0.679  (1146s, 48 evaluations so far)
+geomean(guesses+1) relative to exact MRV (end to end, limit 2, no gate); [capped puzzles]
+policy                               hard       hard11     hard1106    magictour       17clue     unbiased           pm      pm_easy     mean
+L0 exact MRV                    1.000        1.000        1.000        1.000        1.000        1.000        1.000 [2]    1.000        1.000
+L1 final ungated                0.565        0.664        0.603        0.769        0.971        0.939        2.418 [2]    3.570        1.040
+L2 + w_R*R                      0.553        0.641        0.596        0.754        0.969        0.944        2.296 [2]    3.338        1.014
+L3 + n>=3 candidates            0.544        0.605        0.595        0.761        0.969        0.950        0.472 [2]    0.775        0.688
+
+L4 + product  params {'wR': 0.05, 'f3': 0.0, 'f4': 1.0, 'wprod': 4.0, 'a': 0.5}  train 0.582  (532s, 79 evaluations so far)
+geomean(guesses+1) relative to exact MRV (end to end, limit 2, no gate); [capped puzzles]
+policy                               hard       hard11     hard1106    magictour       17clue     unbiased           pm      pm_easy     mean
+L0 exact MRV                    1.000        1.000        1.000        1.000        1.000        1.000        1.000 [2]    1.000        1.000
+L1 final ungated                0.565        0.664        0.603        0.769        0.971        0.939        2.418 [2]    3.570        1.040
+L2 + w_R*R                      0.553        0.641        0.596        0.754        0.969        0.944        2.296 [2]    3.338        1.014
+L3 + n>=3 candidates            0.544        0.605        0.595        0.761        0.969        0.950        0.472 [2]    0.775        0.688
+L4 + product                    0.509        0.568        0.521        0.710        0.971        0.940        0.250 [2]    0.454        0.570
+
+L5 + same-band slack  params {'wR': 0.05, 'f3': 0.0, 'f4': 1.0, 'wprod': 4.0, 'a': 0.5, 'wsp': 0.0, 'wsm': 0.5}  train 0.573  (709s, 133 evaluations so far)
+geomean(guesses+1) relative to exact MRV (end to end, limit 2, no gate); [capped puzzles]
+policy                               hard       hard11     hard1106    magictour       17clue     unbiased           pm      pm_easy     mean
+L0 exact MRV                    1.000        1.000        1.000        1.000        1.000        1.000        1.000 [2]    1.000        1.000
+L1 final ungated                0.565        0.664        0.603        0.769        0.971        0.939        2.418 [2]    3.570        1.040
+L2 + w_R*R                      0.553        0.641        0.596        0.754        0.969        0.944        2.296 [2]    3.338        1.014
+L3 + n>=3 candidates            0.544        0.605        0.595        0.761        0.969        0.950        0.472 [2]    0.775        0.688
+L4 + product                    0.509        0.568        0.521        0.710        0.971        0.940        0.250 [2]    0.454        0.570
+L5 + same-band slack            0.515        0.570        0.521        0.707        0.968        0.940        0.238 [2]    0.436        0.564

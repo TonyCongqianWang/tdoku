@@ -1,0 +1,37 @@
+endbr64
+movdqa	.LC10(%rip), %xmm1
+movdqa	%xmm0, %xmm3
+movdqa	%xmm0, %xmm2
+pshufb	%xmm1, %xmm3
+movdqa	%xmm3, %xmm4
+pxor	%xmm3, %xmm2
+pand	%xmm3, %xmm0
+pshufb	%xmm1, %xmm4
+movdqa	%xmm2, %xmm1
+pand	%xmm4, %xmm2
+pxor	%xmm4, %xmm1
+movdqa	.LC11(%rip), %xmm4
+por	%xmm2, %xmm0
+movdqa	%xmm1, %xmm3
+movdqa	%xmm0, %xmm2
+pshufb	%xmm4, %xmm3
+pshufb	%xmm4, %xmm2
+movdqa	%xmm1, %xmm4
+pand	%xmm3, %xmm1
+pxor	%xmm3, %xmm4
+movdqa	%xmm0, %xmm3
+movdqa	%xmm1, %xmm5
+pxor	%xmm2, %xmm3
+pand	%xmm2, %xmm0
+pand	%xmm3, %xmm1
+pxor	%xmm3, %xmm5
+por	%xmm0, %xmm1
+movdqa	%xmm4, %xmm0
+por	%xmm1, %xmm0
+pandn	%xmm5, %xmm0
+ptest	%xmm0, %xmm0
+je	.L29
+pcmpeqd	%xmm2, %xmm2
+movdqa	%xmm0, %xmm1
+psignw	%xmm2, %xmm1
+pand	%xmm1, %xmm0

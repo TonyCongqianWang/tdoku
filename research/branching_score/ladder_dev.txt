@@ -1,0 +1,62 @@
+17clue     puzzles   75 nodes   146 candidates    6238
+hard       puzzles  400 nodes  3200 candidates  240207
+hard11     puzzles  400 nodes  3200 candidates  246592
+hard1106   puzzles  157 nodes  1256 candidates   96828
+magictour  puzzles  373 nodes  2196 candidates  148072
+pm         puzzles  299 nodes  2392 candidates  359120
+pm_easy    puzzles  300 nodes  2400 candidates  354505
+unbiased   puzzles  197 nodes   402 candidates   18233
+geo cost ratio vs MRV per node [top-1 rate]; last column: mean over datasets
+policy                                     17clue           hard         hard11       hard1106      magictour             pm        pm_easy       unbiased     mean
+L0 exact MRV                          1.000 [ 79]    1.000 [ 34]    1.000 [ 35]    1.000 [ 32]    1.000 [ 46]    1.000 [ 25]    1.000 [ 26]    1.000 [ 75]    1.000
+
+L1 final ungated (n=2, X+ + X-)  params {}  (fit 0s)
+geo cost ratio vs MRV per node [top-1 rate]; last column: mean over datasets
+policy                                     17clue           hard         hard11       hard1106      magictour             pm        pm_easy       unbiased     mean
+L0 exact MRV                          1.000 [ 79]    1.000 [ 34]    1.000 [ 35]    1.000 [ 32]    1.000 [ 46]    1.000 [ 25]    1.000 [ 26]    1.000 [ 75]    1.000
+L1 final ungated (n=2, X+ + X-)       0.963 [ 85]    0.827 [ 51]    0.881 [ 49]    0.828 [ 50]    0.988 [ 50]    0.870 [ 34]    0.884 [ 36]    0.957 [ 80]    0.898
+
+L2 + band restriction w_R*R  params {'wR': 0.02}  (fit 2s)
+geo cost ratio vs MRV per node [top-1 rate]; last column: mean over datasets
+policy                                     17clue           hard         hard11       hard1106      magictour             pm        pm_easy       unbiased     mean
+L0 exact MRV                          1.000 [ 79]    1.000 [ 34]    1.000 [ 35]    1.000 [ 32]    1.000 [ 46]    1.000 [ 25]    1.000 [ 26]    1.000 [ 75]    1.000
+L1 final ungated (n=2, X+ + X-)       0.963 [ 85]    0.827 [ 51]    0.881 [ 49]    0.828 [ 50]    0.988 [ 50]    0.870 [ 34]    0.884 [ 36]    0.957 [ 80]    0.898
+L2 + band restriction w_R*R           0.956 [ 84]    0.827 [ 50]    0.877 [ 49]    0.839 [ 48]    0.966 [ 52]    0.866 [ 34]    0.876 [ 36]    0.970 [ 78]    0.896
+
+L3 + n>=3 candidates f_n, a*X+ + b*X-  params {'wR': 0.005, 'f3': 0.0, 'f4': 1.0}  (fit 13s)
+geo cost ratio vs MRV per node [top-1 rate]; last column: mean over datasets
+policy                                     17clue           hard         hard11       hard1106      magictour             pm        pm_easy       unbiased     mean
+L0 exact MRV                          1.000 [ 79]    1.000 [ 34]    1.000 [ 35]    1.000 [ 32]    1.000 [ 46]    1.000 [ 25]    1.000 [ 26]    1.000 [ 75]    1.000
+L1 final ungated (n=2, X+ + X-)       0.963 [ 85]    0.827 [ 51]    0.881 [ 49]    0.828 [ 50]    0.988 [ 50]    0.870 [ 34]    0.884 [ 36]    0.957 [ 80]    0.898
+L2 + band restriction w_R*R           0.956 [ 84]    0.827 [ 50]    0.877 [ 49]    0.839 [ 48]    0.966 [ 52]    0.866 [ 34]    0.876 [ 36]    0.970 [ 78]    0.896
+L3 + n>=3 candidates f_n, a*X+ + b    0.962 [ 84]    0.824 [ 51]    0.881 [ 49]    0.832 [ 49]    0.975 [ 51]    0.822 [ 38]    0.870 [ 36]    0.987 [ 76]    0.892
+
+L4 + product aggregation  params {'wR': 0.05, 'f3': 0.0, 'f4': 0.5, 'wprod': 4.0, 'a': 0.5}  (fit 19s)
+geo cost ratio vs MRV per node [top-1 rate]; last column: mean over datasets
+policy                                     17clue           hard         hard11       hard1106      magictour             pm        pm_easy       unbiased     mean
+L0 exact MRV                          1.000 [ 79]    1.000 [ 34]    1.000 [ 35]    1.000 [ 32]    1.000 [ 46]    1.000 [ 25]    1.000 [ 26]    1.000 [ 75]    1.000
+L1 final ungated (n=2, X+ + X-)       0.963 [ 85]    0.827 [ 51]    0.881 [ 49]    0.828 [ 50]    0.988 [ 50]    0.870 [ 34]    0.884 [ 36]    0.957 [ 80]    0.898
+L2 + band restriction w_R*R           0.956 [ 84]    0.827 [ 50]    0.877 [ 49]    0.839 [ 48]    0.966 [ 52]    0.866 [ 34]    0.876 [ 36]    0.970 [ 78]    0.896
+L3 + n>=3 candidates f_n, a*X+ + b    0.962 [ 84]    0.824 [ 51]    0.881 [ 49]    0.832 [ 49]    0.975 [ 51]    0.822 [ 38]    0.870 [ 36]    0.987 [ 76]    0.892
+L4 + product aggregation              0.911 [ 89]    0.841 [ 49]    0.870 [ 49]    0.846 [ 48]    0.961 [ 52]    0.768 [ 42]    0.822 [ 40]    1.006 [ 73]    0.875
+
+L5 + same-band zero-slack rows  params {'wR': 0.005, 'f3': 0.5, 'f4': 1.0, 'wprod': 4.0, 'a': 0.5, 'wsm': 0.1, 'wsp': 0.5}  (fit 27s)
+geo cost ratio vs MRV per node [top-1 rate]; last column: mean over datasets
+policy                                     17clue           hard         hard11       hard1106      magictour             pm        pm_easy       unbiased     mean
+L0 exact MRV                          1.000 [ 79]    1.000 [ 34]    1.000 [ 35]    1.000 [ 32]    1.000 [ 46]    1.000 [ 25]    1.000 [ 26]    1.000 [ 75]    1.000
+L1 final ungated (n=2, X+ + X-)       0.963 [ 85]    0.827 [ 51]    0.881 [ 49]    0.828 [ 50]    0.988 [ 50]    0.870 [ 34]    0.884 [ 36]    0.957 [ 80]    0.898
+L2 + band restriction w_R*R           0.956 [ 84]    0.827 [ 50]    0.877 [ 49]    0.839 [ 48]    0.966 [ 52]    0.866 [ 34]    0.876 [ 36]    0.970 [ 78]    0.896
+L3 + n>=3 candidates f_n, a*X+ + b    0.962 [ 84]    0.824 [ 51]    0.881 [ 49]    0.832 [ 49]    0.975 [ 51]    0.822 [ 38]    0.870 [ 36]    0.987 [ 76]    0.892
+L4 + product aggregation              0.911 [ 89]    0.841 [ 49]    0.870 [ 49]    0.846 [ 48]    0.961 [ 52]    0.768 [ 42]    0.822 [ 40]    1.006 [ 73]    0.875
+L5 + same-band zero-slack rows        0.928 [ 89]    0.827 [ 51]    0.870 [ 49]    0.836 [ 49]    0.954 [ 53]    0.748 [ 43]    0.825 [ 40]    0.976 [ 78]    0.868
+
+L6 + cross term no-pair band * R  params {'wR': 0.002, 'f3': 0.5, 'f4': 1.0, 'wprod': 4.0, 'a': 0.5, 'wsm': 0.1, 'wsp': 0.5}  (fit 33s)
+geo cost ratio vs MRV per node [top-1 rate]; last column: mean over datasets
+policy                                     17clue           hard         hard11       hard1106      magictour             pm        pm_easy       unbiased     mean
+L0 exact MRV                          1.000 [ 79]    1.000 [ 34]    1.000 [ 35]    1.000 [ 32]    1.000 [ 46]    1.000 [ 25]    1.000 [ 26]    1.000 [ 75]    1.000
+L1 final ungated (n=2, X+ + X-)       0.963 [ 85]    0.827 [ 51]    0.881 [ 49]    0.828 [ 50]    0.988 [ 50]    0.870 [ 34]    0.884 [ 36]    0.957 [ 80]    0.898
+L2 + band restriction w_R*R           0.956 [ 84]    0.827 [ 50]    0.877 [ 49]    0.839 [ 48]    0.966 [ 52]    0.866 [ 34]    0.876 [ 36]    0.970 [ 78]    0.896
+L3 + n>=3 candidates f_n, a*X+ + b    0.962 [ 84]    0.824 [ 51]    0.881 [ 49]    0.832 [ 49]    0.975 [ 51]    0.822 [ 38]    0.870 [ 36]    0.987 [ 76]    0.892
+L4 + product aggregation              0.911 [ 89]    0.841 [ 49]    0.870 [ 49]    0.846 [ 48]    0.961 [ 52]    0.768 [ 42]    0.822 [ 40]    1.006 [ 73]    0.875
+L5 + same-band zero-slack rows        0.928 [ 89]    0.827 [ 51]    0.870 [ 49]    0.836 [ 49]    0.954 [ 53]    0.748 [ 43]    0.825 [ 40]    0.976 [ 78]    0.868
+L6 + cross term no-pair band * R      0.930 [ 88]    0.827 [ 51]    0.870 [ 49]    0.836 [ 49]    0.954 [ 53]    0.748 [ 43]    0.822 [ 41]    0.972 [ 79]    0.867
